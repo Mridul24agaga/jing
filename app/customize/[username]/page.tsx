@@ -47,13 +47,19 @@ interface PlacedOrnament {
   y: number
 }
 
-export default function Component({ params }: { params: Promise<{ username: string }> }) {
-  const unwrappedParams = React.use(params)
+interface ComponentProps {
+  params: {
+    username: string
+  }
+}
+
+export default function Component({ params }: ComponentProps) {
   const [treeColor, setTreeColor] = useState(treeColors[0].value)
   const [backgroundTheme, setBackgroundTheme] = useState(backgroundThemes[0].value)
   const [isCreating, setIsCreating] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [placedOrnaments, setPlacedOrnaments] = useState<PlacedOrnament[]>([])
+  const [draggedOrnament, setDraggedOrnament] = useState<{ id: number; src: string; alt: string } | null>(null)
   const treeRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -66,19 +72,30 @@ export default function Component({ params }: { params: Promise<{ username: stri
     }
     
     localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, backgroundTheme, placedOrnaments }))
-    router.push(`/${unwrappedParams.username}`)
+    router.push(`/${params.username}`)
   }
 
-  const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, ornament: { id: number; src: string; alt: string }) => {
-    if (treeRef.current) {
-      const treeRect = treeRef.current.getBoundingClientRect()
-      const x = (event as MouseEvent).clientX - treeRect.left
-      const y = (event as MouseEvent).clientY - treeRect.top
-      
-      if (x >= 0 && x <= treeRect.width && y >= 0 && y <= treeRect.height) {
-        setPlacedOrnaments([...placedOrnaments, { ...ornament, x, y }])
-      }
+  const handleMouseDown = (ornament: { id: number; src: string; alt: string }) => {
+    setDraggedOrnament(ornament)
+  }
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!draggedOrnament || !treeRef.current) return
+
+    const treeRect = treeRef.current.getBoundingClientRect()
+    const x = event.clientX - treeRect.left
+    const y = event.clientY - treeRect.top
+
+    if (x >= 0 && x <= treeRect.width && y >= 0 && y <= treeRect.height) {
+      setPlacedOrnaments(prevOrnaments => [
+        ...prevOrnaments,
+        { ...draggedOrnament, x, y }
+      ])
     }
+  }
+
+  const handleMouseUp = () => {
+    setDraggedOrnament(null)
   }
 
   return (
@@ -91,7 +108,7 @@ export default function Component({ params }: { params: Promise<{ username: stri
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        Customize Your JingleBox, {unwrappedParams.username}!
+        Customize Your JingleBox, {params.username}!
       </motion.h1>
       
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -204,10 +221,16 @@ export default function Component({ params }: { params: Promise<{ username: stri
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {unwrappedParams.username}&apos;s JingleBox
+                  {params.username}&apos;s JingleBox
                 </motion.h3>
 
-                <div ref={treeRef} className="relative w-[80%] max-w-[250px] aspect-[3/4]">
+                <div 
+                  ref={treeRef} 
+                  className="relative w-[80%] max-w-[250px] aspect-[3/4]"
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
+                >
                   <Image
                     src="/tree-classic.png"
                     alt="Christmas Tree"
@@ -265,16 +288,15 @@ export default function Component({ params }: { params: Promise<{ username: stri
             {ornaments.map((ornament) => (
               <motion.div
                 key={ornament.id}
-                drag
-                dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
-                onDragEnd={(event) => handleDragEnd(event as MouseEvent, ornament)}
+                onMouseDown={() => handleMouseDown(ornament)}
+                className="cursor-grab active:cursor-grabbing"
               >
                 <Image
                   src={ornament.src}
                   alt={ornament.alt}
                   width={40}
                   height={40}
-                  className="cursor-grab active:cursor-grabbing"
+                  className="pointer-events-none"
                 />
               </motion.div>
             ))}

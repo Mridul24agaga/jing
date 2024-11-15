@@ -135,10 +135,10 @@ export default function Component({ params }: { params: { username: string } }) 
         id: Date.now(),
         content: newMessage,
         sender: `Friend ${messages.length + 1}`,
-        x: Math.random() * 80 + 10,
-        y: Math.random() * 80 + 10,
+        x: Math.random() * 80 + 10, // Random position between 10% and 90% horizontally
+        y: Math.random() * 80 + 10, // Random position between 10% and 90% vertically
       }
-      setMessages([...messages, newMsg])
+      setMessages(prevMessages => [...prevMessages, newMsg])
       setNewMessage('')
       setShowMessageForm(false)
     }
@@ -254,14 +254,6 @@ export default function Component({ params }: { params: { username: string } }) 
 
         {/* Title and Countdown */}
         <div className="mt-4 text-center">
-          <motion.h1 
-            className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg px-4"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            {params.username}&apos;s JingleBox
-          </motion.h1>
           <motion.div
             className="mt-2 text-xl text-white/80 flex items-center justify-center"
             initial={{ opacity: 0 }}
@@ -292,6 +284,24 @@ export default function Component({ params }: { params: { username: string } }) 
                 onClick={() => setSelectedMessage(message)}
               />
             ))}
+            {/* New Message Animation */}
+            <AnimatePresence>
+              {messages.length > 0 && (
+                <motion.div
+                  key={messages[messages.length - 1].id}
+                  initial={{ scale: 0, x: '50%', y: '50%' }}
+                  animate={{ scale: 1, x: `${messages[messages.length - 1].x}%`, y: `${messages[messages.length - 1].y}%` }}
+                  exit={{ scale: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="absolute"
+                >
+                  <Ornament
+                    message={messages[messages.length - 1]}
+                    onClick={() => setSelectedMessage(messages[messages.length - 1])}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
             {/* Animated Star */}
             <motion.div
               className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-yellow-400"
@@ -691,7 +701,8 @@ export default function Component({ params }: { params: { username: string } }) 
                 </motion.button>
               </div>
               
-              <div className="text-center">
+              <
+div className="text-center">
                 <p className="text-white text-lg mb-4">From: {selectedReceivedGift.from}</p>
                 <motion.div
                   className="relative w-48 h-48 mx-auto mb-4"
