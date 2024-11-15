@@ -11,6 +11,7 @@
   "dependencies": {
     "@react-three/drei": "^9.116.1",
     "@react-three/fiber": "^8.17.10",
+    "@tippyjs/react": "^4.2.6",
     "canvas-confetti": "^1.9.3",
     "framer-motion": "^11.11.15",
     "howler": "^2.2.4",
@@ -19,8 +20,10 @@
     "react": "19.0.0-rc-66855b96-20241106",
     "react-confetti": "^6.1.0",
     "react-dom": "19.0.0-rc-66855b96-20241106",
+    "react-draggable": "^4.4.6",
     "react-howler": "^5.2.0",
     "react-snowfall": "^2.1.1",
+    "react-tooltip": "^5.28.0",
     "three": "^0.170.0",
     "use-sound": "^4.0.3"
   },

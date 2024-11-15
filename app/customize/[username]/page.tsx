@@ -47,13 +47,7 @@ interface PlacedOrnament {
   y: number
 }
 
-interface ComponentProps {
-  params: {
-    username: string
-  }
-}
-
-export default function Component({ params }: ComponentProps) {
+export default function Component() {
   const [treeColor, setTreeColor] = useState(treeColors[0].value)
   const [backgroundTheme, setBackgroundTheme] = useState(backgroundThemes[0].value)
   const [isCreating, setIsCreating] = useState(false)
@@ -72,7 +66,7 @@ export default function Component({ params }: ComponentProps) {
     }
     
     localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, backgroundTheme, placedOrnaments }))
-    router.push(`/${params.username}`)
+    router.push('/')
   }
 
   const handleMouseDown = (ornament: { id: number; src: string; alt: string }) => {
@@ -108,7 +102,7 @@ export default function Component({ params }: ComponentProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
-        Customize Your JingleBox, {params.username}!
+        Customize Your JingleBox!
       </motion.h1>
       
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -221,7 +215,7 @@ export default function Component({ params }: ComponentProps) {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {params.username}&apos;s JingleBox
+                  Your JingleBox
                 </motion.h3>
 
                 <div 

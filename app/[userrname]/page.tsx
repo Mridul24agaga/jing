@@ -1,19 +1,48 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
+import { useSearchParams } from 'next/navigation'
+import { Gift, MessageCircle, ImageIcon, Tag, X, ChevronLeft, ChevronRight, Mail, AlertTriangle } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { MessageCircle, Music, X, Send, Gift, Calendar, ChevronLeft, ChevronRight, ShoppingBag, Sparkles, PenTool } from 'lucide-react'
-import Snowfall from 'react-snowfall'
-import ChristmasCards from './christmas-cards'
+
+const ActionButton = ({ icon: Icon, label, onClick, color, badge }: { icon: React.ElementType; label: string; onClick: () => void; color: string; badge?: number }) => (
+  <button
+    onClick={onClick}
+    className={`${color} text-white p-4 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 relative`}
+    style={{ width: '60px', height: '60px' }}
+  >
+    <Icon className="w-7 h-7" />
+    <span className="sr-only">{label}</span>
+    {badge && badge > 0 && (
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+        {badge}
+      </span>
+    )}
+  </button>
+)
 
 interface Message {
-  id: number
-  content: string
-  sender: string
-  x: number
-  y: number
+  id: string;
+  text: string;
+  position: { x: number; y: number };
+  itemType: string;
+  sender: string;
 }
+
+const christmasItems = [
+  'joystick', 'gamepad', 'candy-cane', 'gingerbread-man', 'gift-box', 'snowflake', 'bell', 'santa-hat'
+]
+
+const ornamentPositions = [
+  { x: 50, y: 15 },
+  { x: 45, y: 25 }, { x: 55, y: 25 },
+  { x: 40, y: 35 }, { x: 50, y: 35 }, { x: 60, y: 35 },
+  { x: 35, y: 45 }, { x: 45, y: 45 }, { x: 55, y: 45 }, { x: 65, y: 45 },
+  { x: 30, y: 55 }, { x: 40, y: 55 }, { x: 50, y: 55 }, { x: 60, y: 55 }, { x: 70, y: 55 },
+  { x: 25, y: 65 }, { x: 35, y: 65 }, { x: 45, y: 65 }, { x: 55, y: 65 }, { x: 65, y: 65 }, { x: 75, y: 65 },
+  { x: 20, y: 75 }, { x: 30, y: 75 }, { x: 40, y: 75 }, { x: 50, y: 75 }, { x: 60, y: 75 }, { x: 70, y: 75 }, { x: 80, y: 75 }
+]
 
 interface Scene {
   name: string
@@ -21,126 +50,341 @@ interface Scene {
   alt: string
 }
 
-interface EGift {
-  id: string
-  name: string
-  image: string
-  description: string
-}
-
-interface ReceivedGift {
-  id: string
-  from: string
-  gift: EGift
-  message: string
-  wrapping: {
-    color: string
-    pattern: string
-    ribbon: string
-  }
-}
-
-interface ChristmasCard {
-  id: string
-  image: string
-  defaultMessage: string
-}
-
-interface CustomText {
-  id: string
-  text: string
-  x: number
-  y: number
-  color: string
-  fontSize: number
-}
-
 const scenes: Scene[] = [
-  { name: 'Winter Wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=6736d5f9&is=67358479&hm=7cbe8dd327d6e34f47a0b235772307a3d3babb3d4678cf6ae9c2da3d6cc9410a&=&format=webp&quality=lossless&width=550&height=314', alt: 'Snowy landscape with pine trees' },
+  { name: 'Winter Wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=67382779&is=6736d5f9&hm=866057b6037659d3c1dd170d7fa0abb21b7b267cbc40b75a1cf70245d90ae059&=&format=webp&quality=lossless&width=1075&height=614', alt: 'Snowy landscape with pine trees' },
   { name: 'Cozy Cabin', src: '/cozy-cabin.png', alt: 'Warm cabin interior with fireplace' },
   { name: 'Starry Night', src: '/starry-night.png', alt: 'Night sky filled with stars' },
   { name: 'Northern Lights', src: '/northern-lights.png', alt: 'Aurora borealis over snowy mountains' },
   { name: 'Christmas Market', src: '/christmas-market.png', alt: 'Festive market with stalls and lights' },
 ]
 
-const eGifts: EGift[] = [
-  { id: 'gift1', name: 'Virtual Christmas Tree', image: '/virtual-tree.png', description: 'A beautifully decorated virtual Christmas tree' },
-  { id: 'gift2', name: 'Digital Snowglobe', image: '/snowglobe.png', description: 'A magical digital snowglobe with customizable scene' },
-  { id: 'gift3', name: 'Festive E-Card', image: '/ecard.png', description: 'A heartwarming animated Christmas e-card' },
-  { id: 'gift4', name: 'Holiday Playlist', image: '/playlist.png', description: 'A curated playlist of holiday tunes' },
-]
+const Dialog = ({ isOpen, onClose, children, title }: { isOpen: boolean; onClose: () => void; children: React.ReactNode; title?: string }) => {
+  if (!isOpen) return null;
 
-const giftWrappings = {
-  colors: ['red', 'green', 'blue', 'gold', 'silver'],
-  patterns: ['stripes', 'dots', 'stars', 'snowflakes', 'plain'],
-  ribbons: ['gold', 'silver', 'red', 'green', 'white']
-}
-
-const Ornament: React.FC<{ message: Message; onClick: () => void }> = ({ message, onClick }) => {
   return (
-    <motion.div
-      className="absolute cursor-pointer"
-      style={{ left: `${message.x}%`, top: `${message.y}%` }}
-      whileHover={{ scale: 1.1 }}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gradient-to-b from-red-100 to-green-100 rounded-3xl p-8 max-w-2xl w-full mx-4 h-[90vh] relative shadow-lg">
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16">
+          <Image src="/christmas-items/santa-hat.png" alt="Christmas Hat" width={64} height={64} />
+        </div>
+        
+        <div className="absolute -top-4 -left-4 w-8 h-8 bg-red-500 rounded-full border-4 border-gold animate-pulse"></div>
+        <div className="absolute -top-4 -right-4 w-8 h-8 bg-green-500 rounded-full border-4 border-gold animate-pulse"></div>
+        <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-blue-500 rounded-full border-4 border-gold animate-pulse"></div>
+        <div className="absolute -bottom-4 -right-4 w-8 h-8 bg-yellow-500 rounded-full border-4 border-gold animate-pulse"></div>
+        
+        <div className="mt-6 h-full flex flex-col">
+          <h2 className="text-3xl font-bold text-center mb-6 text-green-800">{title}</h2>
+          <div className="flex-1 overflow-hidden">{children}</div>
+        </div>
+        <button onClick={onClose} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+          <X size={24} />
+        </button>
+      </div>
+    </div>
+  );
+};
+
+const EGiftCard = ({ theme, selected, onClick }: { theme: string; selected: boolean; onClick: () => void }) => {
+  const themes = {
+    'christmas-tree': {
+      title: 'Christmas Tree',
+      gradient: 'from-green-500 to-green-700',
+      icon: '🎄'
+    },
+    'santa': {
+      title: 'Santa',
+      gradient: 'from-red-500 to-red-700',
+      icon: '🎅'
+    },
+    'snowman': {
+      title: 'Snowman',
+      gradient: 'from-blue-400 to-blue-600',
+      icon: '⛄'
+    }
+  }
+
+  const currentTheme = themes[theme as keyof typeof themes]
+
+  return (
+    <div 
+      className={`cursor-pointer transition-all p-6 rounded-lg bg-gradient-to-br ${currentTheme.gradient} ${
+        selected ? 'ring-2 ring-white shadow-lg scale-105' : 'hover:shadow-md'
+      }`}
       onClick={onClick}
     >
-      <div className="w-8 h-8 rounded-full bg-red-500 border-2 border-gold shadow-lg flex items-center justify-center text-white font-bold">
-        {message.sender[0].toUpperCase()}
+      <div className="text-center text-white">
+        <div className="text-4xl mb-2">{currentTheme.icon}</div>
+        <div className="font-medium">{currentTheme.title}</div>
+        <div className="text-sm opacity-75">Digital Card</div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
-export default function Component({ params }: { params: { username: string } }) {
+const GiftingDialog = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  const [selectedTheme, setSelectedTheme] = useState<string>('christmas-tree')
+  const [recipientName, setRecipientName] = useState('')
+  const [recipientEmail, setRecipientEmail] = useState('')
+  const [message, setMessage] = useState('')
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Here you would typically handle the e-gift submission
+    console.log({
+      theme: selectedTheme,
+      recipientName,
+      recipientEmail,
+      message
+    })
+    onClose()
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gradient-to-b from-red-100 to-green-100 rounded-3xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative">
+        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16">
+          <Image src="/christmas-items/santa-hat.png" alt="Christmas Hat" width={64} height={64} />
+        </div>
+        
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+          <X className="h-6 w-6" />
+        </button>
+
+        <h2 className="text-3xl font-bold text-center mb-8 text-green-800">Send a Christmas E-Card</h2>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-3 gap-4">
+            {['christmas-tree', 'santa', 'snowman'].map((theme) => (
+              <EGiftCard
+                key={theme}
+                theme={theme}
+                selected={selectedTheme === theme}
+                onClick={() => setSelectedTheme(theme)}
+              />
+            ))}
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label htmlFor="recipientName" className="block text-sm font-medium text-gray-700">Recipient's Name</label>
+              <input
+                id="recipientName"
+                type="text"
+                value={recipientName}
+                onChange={(e) => setRecipientName(e.target.value)}
+                placeholder="Enter recipient's name"
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="recipientEmail" className="block text-sm font-medium text-gray-700">Recipient's Email</label>
+              <input
+                id="recipientEmail"
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="Enter recipient's email"
+                required
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="message" className="block text-sm font-medium text-gray-700">Your Christmas Message</label>
+              <textarea
+                id="message"
+                value={message}
+                onChange={(e) => setMessage(e.target.value)}
+                placeholder="Write your festive message here..."
+                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 h-32"
+              />
+            </div>
+          </div>
+
+          <button 
+            type="submit" 
+            className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold rounded-md hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center justify-center gap-2"
+          >
+            <Gift className="w-5 h-5" />
+            Send Christmas E-Card
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+const MessageBubble = ({ sender, text }: { sender: string; text: string }) => (
+  <div className="relative group">
+    <div 
+      className="relative bg-white p-6 rounded-[32px] transition-transform hover:scale-[1.02]"
+      style={{
+        boxShadow: `
+          2px 2px 0 rgba(0,0,0,0.1),
+          4px 4px 0 rgba(0,0,0,0.1),
+          -1px -1px 0 rgba(0,0,0,0.1) inset,
+          -2px -2px 0 rgba(0,0,0,0.1) inset
+        `,
+        border: '3px solid black'
+      }}
+    >
+      {/* Corner accents */}
+      <svg className="absolute -top-1 -left-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+        <path d="M2 22 L22 2" stroke="currentColor" strokeWidth="2" fill="none" />
+      </svg>
+      <svg className="absolute -top-1 -right-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+        <path d="M2 2 L22 22" stroke="currentColor" strokeWidth="2" fill="none" />
+      </svg>
+      <svg className="absolute -bottom-1 -left-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+        <path d="M2 2 L22 22" stroke="currentColor" strokeWidth="2" fill="none" />
+      </svg>
+      <svg className="absolute -bottom-1 -right-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+        <path d="M2 22 L22 2" stroke="currentColor" strokeWidth="2" fill="none" />
+      </svg>
+
+      {/* Content */}
+      <div className="relative">
+        <h3 
+          className="font-bold text-xl mb-2" 
+          style={{ 
+            fontFamily: '"Comic Sans MS", cursive',
+            textShadow: '1px 1px 0 rgba(0,0,0,0.1)'
+          }}
+        >
+          {sender}
+        </h3>
+        <p 
+          className="text-gray-700" 
+          style={{ fontFamily: '"Comic Sans MS", cursive' }}
+        >
+          {text}
+        </p>
+      </div>
+
+      {/* Speech bubble tail */}
+      <div className="absolute -bottom-4 left-8 w-8 h-8">
+        <div 
+          className="absolute inset-0 bg-white transform rotate-45"
+          style={{
+            border: '3px solid black',
+            borderTop: 'none',
+            borderLeft: 'none'
+          }}
+        />
+      </div>
+    </div>
+
+    {/* Snowflakes decoration */}
+    <div className="absolute -top-2 left-1/4 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
+    <div className="absolute -top-2 right-1/4 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
+    <div className="absolute -bottom-2 left-1/3 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
+    <div className="absolute -bottom-2 right-1/3 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
+  </div>
+);
+
+const Snowfall = () => (
+  <div className="fixed inset-0 pointer-events-none z-50">
+    {[...Array(50)].map((_, i) => (
+      <div
+        key={i}
+        className="absolute animate-fall"
+        style={{
+          left: `${Math.random() * 100}%`,
+          animationDuration: `${Math.random() * 3 + 2}s`,
+          animationDelay: `${Math.random() * 2}s`,
+        }}
+      >
+        ❄️
+      </div>
+    ))}
+  </div>
+)
+
+const ChristmasLights = () => (
+  <div className="fixed top-0 left-0 w-full h-8 z-40">
+    {[...Array(20)].map((_, i) => (
+      <div
+        key={i}
+        className="absolute w-4 h-4 rounded-full animate-twinkle"
+        style={{
+          left: `${i * 5}%`,
+          backgroundColor: ['red', 'green', 'blue', 'yellow'][i % 4],
+          animationDelay: `${i * 0.1}s`,
+        }}
+      />
+    ))}
+  </div>
+)
+
+export default function ChristmasPage() {
+  const searchParams = useSearchParams()
+  const [timeUntilChristmas, setTimeUntilChristmas] = useState('')
+  const [showMessagePopup, setShowMessagePopup] = useState(false)
+  const [showMessagesPopup, setShowMessagesPopup] = useState(false)
+  const [showGiftingPopup, setShowGiftingPopup] = useState(false)
+  const [message, setMessage] = useState('')
+  const [senderName, setSenderName] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
-  const [showMessageForm, setShowMessageForm] = useState(false)
-  const [newMessage, setNewMessage] = useState('')
-  const [isPlaying, setIsPlaying] = useState(false)
   const [currentScene, setCurrentScene] = useState(0)
-  const [countdown, setCountdown] = useState('')
-  const [showGift, setShowGift] = useState(false)
-  const [showEGiftModal, setShowEGiftModal] = useState(false)
-  const [selectedGift, setSelectedGift] = useState<EGift | null>(null)
-  const [recipientUsername, setRecipientUsername] = useState('')
-  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
-  const [receivedGifts, setReceivedGifts] = useState<ReceivedGift[]>([])
-  const [selectedReceivedGift, setSelectedReceivedGift] = useState<ReceivedGift | null>(null)
-  const [giftMessage, setGiftMessage] = useState('')
-  const [giftWrapping, setGiftWrapping] = useState({
-    color: giftWrappings.colors[0],
-    pattern: giftWrappings.patterns[0],
-    ribbon: giftWrappings.ribbons[0]
-  })
-  const [isUnwrapping, setIsUnwrapping] = useState(false)
-  const [showChristmasCards, setShowChristmasCards] = useState(false)
+  const treeRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    const calculateTimeUntilChristmas = () => {
       const now = new Date()
-      const christmas = new Date(now.getFullYear(), 11, 25) // Month is 0-indexed
-      if (now > christmas) christmas.setFullYear(christmas.getFullYear() + 1)
-      const diff = christmas.getTime() - now.getTime()
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000)
-      setCountdown(`${days}d ${hours}h ${minutes}m ${seconds}s`)
-    }, 1000)
+      const currentYear = now.getFullYear()
+      const christmas = new Date(currentYear, 11, 25)
+      if (now > christmas) christmas.setFullYear(currentYear + 1)
+      
+      const difference = christmas.getTime() - now.getTime()
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24))
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60))
+      
+      setTimeUntilChristmas(`${days}d ${hours}h ${minutes}m until Christmas!`)
+    }
+
+    calculateTimeUntilChristmas()
+    const timer = setInterval(calculateTimeUntilChristmas, 60000)
     return () => clearInterval(timer)
   }, [])
 
-  const handleAddMessage = () => {
-    if (newMessage.trim()) {
-      const newMsg: Message = {
-        id: Date.now(),
-        content: newMessage,
-        sender: `Friend ${messages.length + 1}`,
-        x: Math.random() * 80 + 10, // Random position between 10% and 90% horizontally
-        y: Math.random() * 80 + 10, // Random position between 10% and 90% vertically
+  useEffect(() => {
+    const urlMessage = searchParams.get('message')
+    if (urlMessage) {
+      handleMessageSubmit(null, urlMessage)
+    }
+  }, [searchParams])
+
+  const handleMessageSubmit = (e: React.FormEvent | null, urlMessage?: string) => {
+    if (e) e.preventDefault()
+    const messageToAdd = urlMessage || message
+    const sender = senderName.trim() || 'Anonymous'
+    if (messageToAdd.trim() && treeRef.current) {
+      const availablePositions = ornamentPositions.filter(
+        pos => !messages.some(msg => msg.position.x === pos.x && msg.position.y === pos.y)
+      )
+      
+      if (availablePositions.length > 0) {
+        const position = availablePositions[Math.floor(Math.random() * availablePositions.length)]
+        const newMessage: Message = {
+          id: Date.now().toString(),
+          text: messageToAdd.trim(),
+          position: position,
+          itemType: christmasItems[Math.floor(Math.random() * christmasItems.length)],
+          sender: sender
+        }
+        setMessages(prevMessages => [...prevMessages, newMessage])
+        setMessage('')
+        setSenderName('')
+        setShowMessagePopup(false)
+      } else {
+        alert("The tree is full of ornaments! Remove some to add more.")
       }
-      setMessages(prevMessages => [...prevMessages, newMsg])
-      setNewMessage('')
-      setShowMessageForm(false)
     }
   }
 
@@ -151,73 +395,11 @@ export default function Component({ params }: { params: { username: string } }) 
     })
   }
 
-  const handleSendGift = () => {
-    if (selectedGift && recipientUsername) {
-      // In a real application, you would send this to a server
-      console.log(`Sent ${selectedGift.name} to ${recipientUsername}`)
-      
-      // Simulate receiving a gift (for demo purposes)
-      const newGift: ReceivedGift = {
-        id: Date.now().toString(),
-        from: 'Santa',
-        gift: selectedGift,
-        message: giftMessage,
-        wrapping: giftWrapping
-      }
-      setReceivedGifts(prev => [...prev, newGift])
-
-      // Reset form
-      setSelectedGift(null)
-      setRecipientUsername('')
-      setGiftMessage('')
-      setGiftWrapping({
-        color: giftWrappings.colors[0],
-        pattern: giftWrappings.patterns[0],
-        ribbon: giftWrappings.ribbons[0]
-      })
-      setShowEGiftModal(false)
-    }
-  }
-
-  const handleUnwrapGift = () => {
-    if (receivedGifts.length > 0) {
-      setIsUnwrapping(true)
-      setTimeout(() => {
-        setSelectedReceivedGift(receivedGifts[0])
-        setReceivedGifts(prev => prev.slice(1))
-        setIsUnwrapping(false)
-      }, 3000) // Simulating unwrapping animation time
-    }
-    setShowGift(false)
-  }
-
-  const handleSendChristmasCard = (card: ChristmasCard, customTexts: CustomText[], recipient: string) => {
-    // In a real application, you would send this to a server
-    console.log(`Sent Christmas card ${card.id} to ${recipient} with ${customTexts.length} custom texts`)
-    
-    // Simulate receiving a gift (for demo purposes)
-    const newGift: ReceivedGift = {
-      id: Date.now().toString(),
-      from: 'Santa',
-      gift: {
-        id: card.id,
-        name: 'Custom Christmas Card',
-        image: card.image,
-        description: 'A beautifully customized Christmas card'
-      },
-      message: customTexts.map(text => text.text).join(' '),
-      wrapping: {
-        color: 'red',
-        pattern: 'snowflakes',
-        ribbon: 'gold'
-      }
-    }
-    setReceivedGifts(prev => [...prev, newGift])
-  }
-
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gradient-to-b from-blue-900 to-indigo-900">
-      {/* Background Scene */}
+    <div className="relative min-h-screen overflow-hidden bg-gradient-to-b from-blue-900 to-blue-700">
+      <Snowfall />
+      <ChristmasLights />
+      <div className="absolute inset-0 bg-[url('/snowflake-pattern.png')] opacity-20"></div>
       <AnimatePresence mode="wait">
         <motion.div
           key={currentScene}
@@ -232,165 +414,88 @@ export default function Component({ params }: { params: { username: string } }) 
             alt={scenes[currentScene].alt}
             layout="fill"
             objectFit="cover"
-            objectPosition="center 20%"
+            quality={100}
             priority
-            className="select-none opacity-60"
           />
         </motion.div>
       </AnimatePresence>
-
-      {/* Enhanced Snowfall */}
-      <Snowfall 
-        snowflakeCount={200}
-        radius={[0.5, 2.5]}
-        speed={[0.5, 1.5]}
-        wind={[-0.5, 1]}
-      />
-
-      {/* Content Overlay */}
-      <div className="relative z-10 h-full flex flex-col items-center">
-        {/* Decorative Border */}
-        <div className="absolute inset-4 border-4 border-white/20 rounded-3xl pointer-events-none" />
-
-        {/* Title and Countdown */}
-        <div className="mt-4 text-center">
-          <motion.div
-            className="mt-2 text-xl text-white/80 flex items-center justify-center"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Calendar className="mr-2" />
-            <span>{countdown} until Christmas!</span>
-          </motion.div>
-        </div>
-
-        {/* Main Content Area with Tree */}
-        <div className="flex-1 w-full flex flex-col items-center justify-end">
-          {/* Christmas Tree with Ornaments */}
-          <div className="relative w-[90%] max-w-2xl aspect-[3/4] mb-20">
-            <Image
-              src="/tree-classic.png"
-              alt="Christmas Tree"
-              layout="fill"
-              objectFit="contain"
-              priority
-              className="select-none"
-            />
-            {messages.map((message) => (
-              <Ornament
-                key={message.id}
-                message={message}
-                onClick={() => setSelectedMessage(message)}
-              />
-            ))}
-            {/* New Message Animation */}
-            <AnimatePresence>
-              {messages.length > 0 && (
-                <motion.div
-                  key={messages[messages.length - 1].id}
-                  initial={{ scale: 0, x: '50%', y: '50%' }}
-                  animate={{ scale: 1, x: `${messages[messages.length - 1].x}%`, y: `${messages[messages.length - 1].y}%` }}
-                  exit={{ scale: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="absolute"
-                >
-                  <Ornament
-                    message={messages[messages.length - 1]}
-                    onClick={() => setSelectedMessage(messages[messages.length - 1])}
-                  />
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {/* Animated Star */}
+      <div ref={treeRef} className="absolute inset-0 flex items-end justify-center pb-8">
+        <div className="relative w-[400px] h-[600px]">
+          <Image
+            src="/tree-classic.png"
+            alt="Christmas Tree"
+            layout="fill"
+            objectFit="contain"
+            priority
+          />
+          {messages.map((msg) => (
             <motion.div
-              className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 text-yellow-400"
-              animate={{ 
-                scale: [1, 1.2, 1],
-                rotate: [0, 5, -5, 0],
+              key={msg.id}
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 20 }}
+              style={{
+                position: 'absolute',
+                left: `${msg.position.x}%`,
+                top: `${msg.position.y}%`,
+                transform: 'translate(-50%, -50%)',
+                cursor: 'pointer',
               }}
-              transition={{ 
-                duration: 2,
-                repeat: Infinity,
-                repeatType: "reverse"
-              }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
+              <Image
+                src={`/christmas-items/${msg.itemType}.png`}
+                alt={msg.itemType}
+                width={32}
+                height={32}
+              />
             </motion.div>
-          </div>
+          ))}
+        </div>
+      </div>
 
-          {/* Control Panel */}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-4 md:gap-8">
-            {/* Gifts */}
-            <motion.div 
-              className="flex gap-2"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.2 }}
-            >
-              <motion.button
-                className="relative w-10 h-10 md:w-12 md:h-12 bg-red-500 rounded-xl shadow-lg flex items-center justify-center
-                           hover:brightness-110 transition-all"
-                whileHover={{ y: -5, boxShadow: '0 10px 20px rgba(0, 0, 0, 0.2)' }}
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                onClick={() => setShowGift(true)}
-              >
-                <Gift className="w-5 h-5 md:w-6 md:h-6 text-white" />
-                {receivedGifts.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-yellow-500 text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">
-                    {receivedGifts.length}
-                  </span>
-                )}
-              </motion.button>
-            </motion.div>
-
-            {/* Control Buttons */}
-            <motion.button
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-500 hover:bg-red-600 
-                         transition-colors shadow-lg flex items-center justify-center"
-              whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setIsPlaying(!isPlaying)}
-            >
-              <Music className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </motion.button>
-
-            <motion.button
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-500 hover:bg-purple-600 
-                         transition-colors shadow-lg flex items-center justify-center"
-              whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowMessageForm(true)}
-            >
-              <MessageCircle className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </motion.button>
-
-            <motion.button
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-yellow-500 hover:bg-yellow-600 
-                         transition-colors shadow-lg flex items-center justify-center"
-              whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowEGiftModal(true)}
-            >
-              <ShoppingBag className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </motion.button>
-
-            <motion.button
-              className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-500 hover:bg-green-600 
-                         transition-colors shadow-lg flex items-center justify-center"
-              whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => setShowChristmasCards(true)}
-            >
-              <PenTool className="w-5 h-5 md:w-6 md:h-6 text-white" />
-            </motion.button>
-          </div>
+      <div className="relative z-10 flex flex-col items-center justify-between min-h-screen p-6">
+        <div className="bg-white/10 backdrop-blur-md px-6 py-2 rounded-full text-white font-medium shadow-lg">
+          {timeUntilChristmas}
         </div>
 
-        {/* Scene Navigation */}
+        <h1 className="text-4xl md:text-6xl font-bold text-center mb-8 md:mb-12 text-white drop-shadow-lg">
+          Merry Christmas!
+        </h1>
+
+        <div className="flex items-center gap-4 mt-auto mb-8">
+          <ActionButton
+            icon={Gift}
+            label="Send Gift"
+            onClick={() => setShowGiftingPopup(true)}
+            color="bg-gradient-to-br from-red-500 to-red-700"
+          />
+          <ActionButton
+            icon={MessageCircle}
+            label="Add Message"
+            onClick={() => setShowMessagePopup(true)}
+            color="bg-gradient-to-br from-purple-500 to-purple-700"
+          />
+          <ActionButton
+            icon={ImageIcon}
+            label="Add Photo"
+            onClick={() => console.log('Add Photo clicked')}
+            color="bg-gradient-to-br from-orange-500 to-orange-700"
+          />
+          <ActionButton
+            icon={Tag}
+            label="Add Tag"
+            onClick={() => console.log('Add Tag clicked')}
+            color="bg-gradient-to-br from-green-500 to-green-700"
+          />
+          <ActionButton
+            icon={Mail}
+            label="View Messages"
+            onClick={() => setShowMessagesPopup(true)}
+            color="bg-gradient-to-br from-blue-500 to-blue-700"
+            badge={messages.length}
+          />
+        </div>
+
         <div className="absolute top-1/2 left-4 right-4 flex justify-between items-center">
           <motion.button
             className="bg-white/20 backdrop-blur-md rounded-full p-2 text-white"
@@ -411,347 +516,62 @@ export default function Component({ params }: { params: { username: string } }) 
         </div>
       </div>
 
-      {/* Message Form Modal */}
-      <AnimatePresence>
-        {showMessageForm && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full max-w-md mx-auto border border-white/30 shadow-2xl"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">Add a Message</h2>
-                <motion.button
-                  onClick={() => setShowMessageForm(false)}
-                  className="text-white/70 hover:text-white"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <X className="w-6 h-6" />
-                </motion.button>
-              </div>
-              
-              <textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Write your holiday message..."
-                className="w-full p-4 rounded-xl bg-white/10 border border-white/30 
-                          focus:ring-2 focus:ring-purple-500 focus:border-transparent 
-                          transition-colors resize-none mb-6 h-32 text-white placeholder-white/50"
-              />
-              
-              <div className="flex justify-end">
-                <motion.button
-                  onClick={handleAddMessage}
-                  className="bg-purple-500 text-white px-6 py-3 rounded-xl font-medium
-                           hover:bg-purple-600 transition-colors flex items-center gap-2 shadow-lg"
-                  whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span>Send</span>
-                  <Send className="w-5 h-5" />
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Gift Unwrapping Modal */}
-      <AnimatePresence>
-        {showGift && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full max-w-md mx-auto border border-white/30 shadow-2xl"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">Your Gifts</h2>
-                <motion.button
-                  onClick={() => setShowGift(false)}
-                  className="text-white/70 hover:text-white"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <X className="w-6 h-6" />
-                </motion.button>
-              </div>
-              
-              {receivedGifts.length > 0 ? (
-                <div className="space-y-4">
-                  <p className="text-white">You have {receivedGifts.length} gift(s) to unwrap!</p>
-                  <motion.button
-                    onClick={handleUnwrapGift}
-                    className="w-full bg-green-500 text-white px-6 py-3 rounded-xl font-medium
-                             hover:bg-green-600 transition-colors flex items-center justify-center gap-2 shadow-lg"
-                    whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={isUnwrapping}
-                  >
-                    <span>{isUnwrapping ? 'Unwrapping...' : 'Unwrap a Gift'}</span>
-                    <Gift className="w-5 h-5" />
-                  </motion.button>
-                </div>
-              ) : (
-                <p className="text-white text-center">No gifts to unwrap right now. Send some to your friends!</p>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* E-Gift Modal */}
-      <AnimatePresence>
-        {showEGiftModal && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full max-w-md mx-auto border border-white/30 shadow-2xl"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">Send an E-Gift</h2>
-                <motion.button
-                  onClick={() => setShowEGiftModal(false)}
-                  className="text-white/70 hover:text-white"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <X className="w-6 h-6" />
-                </motion.button>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Choose a gift:</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {eGifts.map((gift) => (
-                      <motion.div
-                        key={gift.id}
-                        className={`p-2 rounded-lg cursor-pointer ${
-                          selectedGift?.id === gift.id ? 'bg-purple-500' : 'bg-white/10'
-                        }`}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setSelectedGift(gift)}
-                      >
-                        <Image
-                          src={gift.image}
-                          alt={gift.name}
-                          width={100}
-                          height={100}
-                          className="mx-auto mb-2"
-                        />
-                        <p className="text-white text-center text-sm">{gift.name}</p>
-                      </motion.div>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="recipient" className="block text-sm font-medium text-white mb-2">
-                    Recipient's username:
-                  </label>
-                  <input
-                    type="text"
-                    id="recipient"
-                    value={recipientUsername}
-                    onChange={(e) => setRecipientUsername(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/30 rounded-md text-white placeholder-white/50"
-                    placeholder="Enter username"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="giftMessage" className="block text-sm font-medium text-white mb-2">
-                    Add a message:
-                  </label>
-                  <textarea
-                    id="giftMessage"
-                    value={giftMessage}
-                    onChange={(e) => setGiftMessage(e.target.value)}
-                    className="w-full px-3 py-2 bg-white/10 border border-white/30 rounded-md text-white placeholder-white/50 resize-none h-24"
-                    placeholder="Write a message to go with your gift..."
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-white mb-2">Customize wrapping:</label>
-                  <div className="flex space-x-2">
-                    <select
-                      value={giftWrapping.color}
-                      onChange={(e) => setGiftWrapping({...giftWrapping, color: e.target.value})}
-                      className="bg-white/10 border border-white/30 rounded-md text-white"
-                    >
-                      {giftWrappings.colors.map(color => (
-                        <option key={color} value={color}>{color}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={giftWrapping.pattern}
-                      onChange={(e) => setGiftWrapping({...giftWrapping, pattern: e.target.value})}
-                      className="bg-white/10 border border-white/30 rounded-md text-white"
-                    >
-                      {giftWrappings.patterns.map(pattern => (
-                        <option key={pattern} value={pattern}>{pattern}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={giftWrapping.ribbon}
-                      onChange={(e) => setGiftWrapping({...giftWrapping, ribbon: e.target.value})}
-                      className="bg-white/10 border border-white/30 rounded-md text-white"
-                    >
-                      {giftWrappings.ribbons.map(ribbon => (
-                        <option key={ribbon} value={ribbon}>{ribbon}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-              
-              <motion.button
-                onClick={handleSendGift}
-                className="mt-6 w-full bg-purple-500 text-white px-6 py-3 rounded-xl font-medium
-                         hover:bg-purple-600 transition-colors flex items-center justify-center gap-2 shadow-lg"
-                whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <span>Send Gift</span>
-                <Send className="w-5 h-5" />
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Message Display Modal */}
-      <AnimatePresence>
-        {selectedMessage && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full max-w-md mx-auto border border-white/30 shadow-2xl"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">Message from {selectedMessage.sender}</h2>
-                <motion.button
-                  onClick={() => setSelectedMessage(null)}
-                  className="text-white/70 hover:text-white"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <X className="w-6 h-6" />
-                </motion.button>
-              </div>
-              
-              <p className="text-white text-lg">{selectedMessage.content}</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Received Gift Display Modal */}
-      <AnimatePresence>
-        {selectedReceivedGift && (
-          <motion.div
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white/10 backdrop-blur-md rounded-3xl p-6 w-full max-w-md mx-auto border border-white/30 shadow-2xl"
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-semibold text-white">You received a gift!</h2>
-                <motion.button
-                  onClick={() => setSelectedReceivedGift(null)}
-                  className="text-white/70 hover:text-white"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <X className="w-6 h-6" />
-                </motion.button>
-              </div>
-              
-              <
-div className="text-center">
-                <p className="text-white text-lg mb-4">From: {selectedReceivedGift.from}</p>
-                <motion.div
-                  className="relative w-48 h-48 mx-auto mb-4"
-                  initial={{ rotateY: 0 }}
-                  animate={{ rotateY: 360 }}
-                  transition={{ duration: 1 }}
-                >
-                  <Image
-                    src={selectedReceivedGift.gift.image}
-                    alt={selectedReceivedGift.gift.name}
-                    layout="fill"
-                    objectFit="contain"
-                  />
-                </motion.div>
-                <p className="text-white text-xl font-semibold mb-2">{selectedReceivedGift.gift.name}</p>
-                <p className="text-white mb-4">{selectedReceivedGift.gift.description}</p>
-                <div className="bg-white/10 rounded-lg p-4 mb-4">
-                  <p className="text-white italic">&quot;{selectedReceivedGift.message}&quot;</p>
-                </div>
-                <div className="flex justify-center space-x-2 mb-4">
-                  <Sparkles className="text-yellow-400" />
-                  <p className="text-white">Wrapped in {selectedReceivedGift.wrapping.color} paper with {selectedReceivedGift.wrapping.pattern} pattern and a {selectedReceivedGift.wrapping.ribbon} ribbon</p>
-                  <Sparkles className="text-yellow-400" />
-                </div>
-                <motion.button
-                  className="bg-green-500 text-white px-6 py-3 rounded-xl font-medium
-                           hover:bg-green-600 transition-colors flex items-center justify-center gap-2 shadow-lg mx-auto"
-                  whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(255, 255, 255, 0.3)' }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => setSelectedReceivedGift(null)}
-                >
-                  <span>Close</span>
-                  <X className="w-5 h-5" />
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Christmas Cards Modal */}
-      <AnimatePresence>
-        {showChristmasCards && (
-          <ChristmasCards
-            onClose={() => setShowChristmasCards(false)}
-            onSend={handleSendChristmasCard}
+      <Dialog 
+        isOpen={showMessagePopup} 
+        onClose={() => setShowMessagePopup(false)}
+        title="Add a Message"
+      >
+        <form onSubmit={handleMessageSubmit} className="space-y-4">
+          <input
+            type="text"
+            value={senderName}
+            onChange={(e) => setSenderName(e.target.value)}
+            placeholder="Your name"
+            className="w-full px-4 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
           />
-        )}
-      </AnimatePresence>
+          <textarea
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your message..."
+            className="w-full px-4 py-2 text-gray-700 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            rows={4}
+          />
+          <button
+            type="submit"
+            className="w-full px-4 py-2 text-white bg-gradient-to-r from-red-500 to-red-700 rounded-lg hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors duration-300"
+          >
+            Add to Tree
+          </button>
+        </form>
+      </Dialog>
+
+      <Dialog 
+        isOpen={showMessagesPopup} 
+        onClose={() => setShowMessagesPopup(false)}
+        title="Christmas Messages"
+      >
+        <div className="h-full overflow-y-auto space-y-4 pr-2">
+          {messages.length > 0 ? (
+            messages.map((msg) => (
+              <MessageBubble 
+                key={msg.id}
+                sender={msg.sender}
+                text={msg.text}
+              />
+            ))
+          ) : (
+            <div className="text-center">
+              <AlertTriangle className="mx-auto text-yellow-500 mb-2" size={48} />
+              <p className="text-gray-700">No messages yet. Add some to the tree!</p>
+            </div>
+          )}
+        </div>
+      </Dialog>
+
+      <GiftingDialog 
+        isOpen={showGiftingPopup}
+        onClose={() => setShowGiftingPopup(false)}
+      />
     </div>
   )
 }
