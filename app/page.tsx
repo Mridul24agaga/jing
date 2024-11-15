@@ -38,7 +38,7 @@ const ChristmasCountdown = () => {
   }, [])
 
   return (
-    <div className="flex justify-center space-x-4 mb-8">
+    <div className="flex flex-wrap justify-center gap-4 mb-8">
       {Object.entries(timeLeft).map(([unit, value]) => (
         <motion.div 
           key={unit} 
@@ -47,14 +47,14 @@ const ChristmasCountdown = () => {
           transition={{ type: "spring", stiffness: 300 }}
         >
           <motion.div 
-            className="text-4xl font-bold"
+            className="text-2xl md:text-4xl font-bold"
             initial={{ scale: 1 }}
             animate={{ scale: [1, 1.2, 1] }}
             transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
           >
             {value}
           </motion.div>
-          <div className="text-sm uppercase">{unit}</div>
+          <div className="text-xs md:text-sm uppercase">{unit}</div>
         </motion.div>
       ))}
     </div>
@@ -64,12 +64,12 @@ const ChristmasCountdown = () => {
 const AnimatedChristmasTree = () => {
   return (
     <motion.div
-      className="absolute left-10 bottom-10 text-green-500"
+      className="absolute left-4 md:left-10 bottom-4 md:bottom-10 text-green-500"
       initial={{ scale: 0 }}
       animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
       transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
     >
-      <Tree size={100} />
+      <Tree size={50} className="md:w-24 md:h-24" />
     </motion.div>
   )
 }
@@ -193,7 +193,7 @@ const FestiveGreeting = () => {
 
   return (
     <motion.div
-      className="absolute top-4 left-1/2 transform -translate-x-1/2 text-4xl font-bold text-yellow-300"
+      className="absolute top-4 left-1/2 transform -translate-x-1/2 text-2xl md:text-4xl font-bold text-yellow-300"
       initial={{ y: -50, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       exit={{ y: -50, opacity: 0 }}
@@ -215,7 +215,7 @@ const SurpriseGift = () => {
 
   return (
     <motion.div
-      className="absolute right-10 bottom-20 cursor-pointer"
+      className="absolute right-4 md:right-10 bottom-20 cursor-pointer"
       whileHover={{ scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       onClick={handleClick}
@@ -230,7 +230,7 @@ const SurpriseGift = () => {
           <p className="text-sm">Spread the joy!</p>
         </motion.div>
       ) : (
-        <Gift size={60} className="text-red-500" />
+        <Gift size={40} className="md:w-16 md:h-16 text-red-500" />
       )}
     </motion.div>
   )
@@ -238,17 +238,33 @@ const SurpriseGift = () => {
 
 const AnimatedSantaSleigh = () => {
   const controls = useAnimation()
+  const [position, setPosition] = useState({ x: 0, y: 0 })
+
+  useEffect(() => {
+    const updatePosition = () => {
+      const newX = Math.random() * 100
+      const newY = Math.random() * 100
+      setPosition({ x: newX, y: newY })
+    }
+
+    // Initial position update
+    updatePosition()
+
+    // Set up interval to update position every 2-3 minutes
+    const interval = setInterval(() => {
+      updatePosition()
+    }, (2 + Math.random()) * 60 * 1000) // Random time between 2-3 minutes
+
+    return () => clearInterval(interval)
+  }, [])
 
   useEffect(() => {
     controls.start({
-      x: ['0%', '100%', '0%', '100%'],
-      y: ['0%', '100%', '100%', '0%'],
-      transition: {
-        x: { duration: 10, times: [0, 0.25, 0.75, 1], repeat: Infinity },
-        y: { duration: 10, times: [0, 0.25, 0.75, 1], repeat: Infinity },
-      }
+      x: `${position.x}%`,
+      y: `${position.y}%`,
+      transition: { duration: 5, ease: "easeInOut" }
     })
-  }, [controls])
+  }, [position, controls])
 
   return (
     <motion.div
@@ -257,9 +273,9 @@ const AnimatedSantaSleigh = () => {
       animate={controls}
     >
       <motion.img
-        src="https://media.discordapp.net/attachments/1193183717548638301/1306676569800048740/4c137b49-c6fc-4295-b4db-7511490e4546_image-removebg-preview_1.png?ex=673788e3&is=67363763&hm=8da515e2cc4825d4ff1df41805a7df3a6de70e908dc885a452a58d819ce8ab18&=&format=webp&quality=lossless"
+        src="https://media.discordapp.net/attachments/1193183717548638301/1306676569800048740/4c137b49-c6fc-4295-b4db-7511490e4546_image-removebg-preview_1.png?ex=6738da63&is=673788e3&hm=987f7105470d6cf3fa130646f997cdbe34190fa465f1a1f4922febb5938071cf&=&format=webp&quality=lossless"
         alt="Santa's Sleigh"
-        className="w-64 h-auto"
+        className="w-32 h-auto md:w-64"
         animate={{
           rotate: [-5, 5, -5],
         }}
@@ -274,10 +290,47 @@ const AnimatedSantaSleigh = () => {
   )
 }
 
+const FloatingLyrics = () => {
+  const lyrics = [
+    "Jingle bells, jingle bells",
+    "Jingle all the way",
+    "Oh what fun it is to ride",
+    "In a one-horse open sleigh",
+    "Dashing through the snow",
+    "In a one-horse open sleigh",
+    "O'er the fields we go",
+    "Laughing all the way",
+  ]
+
+  return (
+    <>
+      {lyrics.map((line, index) => (
+        <motion.div
+          key={index}
+          className="absolute text-white text-opacity-50 pointer-events-none"
+          initial={{ opacity: 0, x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight }}
+          animate={{
+            opacity: [0, 1, 0],
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+          }}
+          transition={{
+            duration: 10,
+            repeat: Infinity,
+            delay: index * 2,
+          }}
+        >
+          {line}
+        </motion.div>
+      ))}
+    </>
+  )
+}
+
 export default function LandingPage() {
   const [username, setUsername] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [isSoundOn, setIsSoundOn] = useState(false)
+  const [isSoundOn, setIsSoundOn] = useState(true)
   const router = useRouter()
 
   const [playJingleBells, { stop: stopJingleBells }] = useSound('/sounds/jingle-bells.mp3', { loop: true })
@@ -306,7 +359,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-700 via-green-800 to-blue-900 text-white p-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-red-700 via-green-800 to-blue-900 text-white p-4 md:p-8 relative overflow-hidden">
       <Snowfall snowflakeCount={200} />
       <FallingGifts />
       <AnimatedChristmasTree />
@@ -315,9 +368,10 @@ export default function LandingPage() {
       <FestiveGreeting />
       <SurpriseGift />
       <AnimatedSantaSleigh />
+      <FloatingLyrics />
       
       <motion.h1 
-        className="text-6xl font-bold text-center mb-8 mt-16"
+        className="text-4xl md:text-6xl font-bold text-center mb-8 mt-16"
         initial={{ y: -50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ duration: 0.5 }}
@@ -330,12 +384,12 @@ export default function LandingPage() {
       <ChristmasCountdown />
       
       <motion.div 
-        className="max-w-md mx-auto bg-gray-900 bg-opacity-80 backdrop-blur-md text-white rounded-xl shadow-2xl p-8"
+        className="max-w-md mx-auto bg-gray-900 bg-opacity-80 backdrop-blur-md text-white rounded-xl shadow-2xl p-6 md:p-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h2 className="text-3xl font-semibold mb-6 text-center">Create Your Christmas Page</h2>
+        <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center">Create Your Christmas Page</h2>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
@@ -343,7 +397,7 @@ export default function LandingPage() {
             </label>
             <div className="flex rounded-lg overflow-hidden bg-gray-800">
               <span className="inline-flex items-center px-3 border-r border-gray-700 bg-gray-700 text-gray-300 text-sm font-mono">
-                jinglebox.pro/
+                jinglebell.pro/
               </span>
               <input
                 type="text"

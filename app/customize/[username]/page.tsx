@@ -66,7 +66,7 @@ export default function Component() {
     }
     
     localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, backgroundTheme, placedOrnaments }))
-    router.push('/')
+    router.push('/[username]')
   }
 
   const handleMouseDown = (ornament: { id: number; src: string; alt: string }) => {
