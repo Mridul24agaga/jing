@@ -291,6 +291,7 @@ const AnimatedSantaSleigh = () => {
 }
 
 const FloatingLyrics = () => {
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const lyrics = [
     "Jingle bells, jingle bells",
     "Jingle all the way",
@@ -302,17 +303,34 @@ const FloatingLyrics = () => {
     "Laughing all the way",
   ]
 
+  useEffect(() => {
+    setDimensions({
+      width: window.innerWidth,
+      height: window.innerHeight
+    })
+
+    const handleResize = () => {
+      setDimensions({
+        width: window.innerWidth,
+        height: window.innerHeight
+      })
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
   return (
     <>
       {lyrics.map((line, index) => (
         <motion.div
           key={index}
           className="absolute text-white text-opacity-50 pointer-events-none"
-          initial={{ opacity: 0, x: Math.random() * window.innerWidth, y: Math.random() * window.innerHeight }}
+          initial={{ opacity: 0, x: 0, y: 0 }}
           animate={{
             opacity: [0, 1, 0],
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
+            x: Math.random() * (dimensions.width || 100),
+            y: Math.random() * (dimensions.height || 100),
           }}
           transition={{
             duration: 10,
@@ -397,7 +415,7 @@ export default function LandingPage() {
             </label>
             <div className="flex rounded-lg overflow-hidden bg-gray-800">
               <span className="inline-flex items-center px-3 border-r border-gray-700 bg-gray-700 text-gray-300 text-sm font-mono">
-                jinglebell.pro/
+                jinglebox.pro/
               </span>
               <input
                 type="text"
