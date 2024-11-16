@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
@@ -21,6 +21,12 @@ const backgroundThemes = [
   { name: 'Northern Lights', value: 'northern-lights' }
 ]
 
+const ornaments = [
+  { id: 1, src: '/ornament-red.png', alt: 'Red Ornament' },
+  { id: 2, src: '/ornament-blue.png', alt: 'Blue Ornament' },
+  { id: 3, src: '/ornament-gold.png', alt: 'Gold Ornament' },
+]
+
 interface CreationStep {
   icon: typeof Sparkles
   text: string
@@ -33,49 +39,12 @@ const creationSteps: CreationStep[] = [
   { icon: MessageCircle, text: "Creating your message board..." }
 ]
 
-const FloatingLyrics = () => {
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  const lyrics = [
-    "Jingle bells, jingle bells",
-    "Jingle all the way",
-    "Oh what fun it is to ride",
-    "In a one-horse open sleigh",
-    "Dashing through the snow",
-    "In a one-horse open sleigh",
-    "O'er the fields we go",
-    "Laughing all the way",
-  ]
-
-  useEffect(() => {
-    setDimensions({
-      width: window.innerWidth,
-      height: window.innerHeight
-    })
-  }, [])
-
-  return (
-    <>
-      {lyrics.map((line, index) => (
-        <motion.div
-          key={index}
-          className="absolute text-white text-opacity-50 pointer-events-none"
-          initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{
-            opacity: [0, 1, 0],
-            x: Math.random() * (dimensions.width || 100),
-            y: Math.random() * (dimensions.height || 100),
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            delay: index * 2,
-          }}
-        >
-          {line}
-        </motion.div>
-      ))}
-    </>
-  )
+interface PlacedOrnament {
+  id: number
+  src: string
+  alt: string
+  x: number
+  y: number
 }
 
 export default function Component() {
@@ -83,6 +52,8 @@ export default function Component() {
   const [backgroundTheme, setBackgroundTheme] = useState(backgroundThemes[0].value)
   const [isCreating, setIsCreating] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
+  const [placedOrnaments, setPlacedOrnaments] = useState<PlacedOrnament[]>([])
+  const [draggedOrnament, setDraggedOrnament] = useState<{ id: number; src: string; alt: string } | null>(null)
   const treeRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
@@ -94,14 +65,37 @@ export default function Component() {
       await new Promise(resolve => setTimeout(resolve, 1500))
     }
     
-    localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, backgroundTheme }))
-    router.push('/')
+    localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, backgroundTheme, placedOrnaments }))
+    router.push('/[username]')
+  }
+
+  const handleMouseDown = (ornament: { id: number; src: string; alt: string }) => {
+    setDraggedOrnament(ornament)
+  }
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!draggedOrnament || !treeRef.current) return
+
+    const treeRect = treeRef.current.getBoundingClientRect()
+    const x = event.clientX - treeRect.left
+    const y = event.clientY - treeRect.top
+
+    if (x >= 0 && x <= treeRect.width && y >= 0 && y <= treeRect.height) {
+      setPlacedOrnaments(prevOrnaments => [
+        ...prevOrnaments,
+        { ...draggedOrnament, x, y }
+      ])
+    }
+  }
+
+  const handleMouseUp = () => {
+    setDraggedOrnament(null)
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white p-4 md:p-8 relative overflow-hidden">
       <Snowfall snowflakeCount={100} />
-      <FloatingLyrics />
+      
       <motion.h1 
         className="text-4xl md:text-6xl font-bold text-center mb-8 md:mb-12 bg-clip-text text-transparent bg-gradient-to-r from-pink-300 via-purple-300 to-indigo-300 drop-shadow-lg"
         initial={{ y: -50, opacity: 0 }}
@@ -227,6 +221,9 @@ export default function Component() {
                 <div 
                   ref={treeRef} 
                   className="relative w-[80%] max-w-[250px] aspect-[3/4]"
+                  onMouseMove={handleMouseMove}
+                  onMouseUp={handleMouseUp}
+                  onMouseLeave={handleMouseUp}
                 >
                   <Image
                     src="/tree-classic.png"
@@ -239,6 +236,17 @@ export default function Component() {
                       filter: `hue-rotate(${treeColors.findIndex(c => c.value === treeColor) * 30}deg)`,
                     }}
                   />
+                  {placedOrnaments.map((ornament, index) => (
+                    <Image
+                      key={index}
+                      src={ornament.src}
+                      alt={ornament.alt}
+                      width={20}
+                      height={20}
+                      className="absolute"
+                      style={{ left: ornament.x, top: ornament.y }}
+                    />
+                  ))}
                   <motion.div
                     className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 text-yellow-400"
                     animate={{ 
@@ -267,6 +275,25 @@ export default function Component() {
                 </motion.div>
               </div>
             </div>
+          </div>
+          
+          {/* Ornament Selection */}
+          <div className="mt-4 flex justify-center space-x-4">
+            {ornaments.map((ornament) => (
+              <motion.div
+                key={ornament.id}
+                onMouseDown={() => handleMouseDown(ornament)}
+                className="cursor-grab active:cursor-grabbing"
+              >
+                <Image
+                  src={ornament.src}
+                  alt={ornament.alt}
+                  width={40}
+                  height={40}
+                  className="pointer-events-none"
+                />
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>
