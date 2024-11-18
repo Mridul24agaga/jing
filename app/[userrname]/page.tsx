@@ -3,19 +3,23 @@
 import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import { useSearchParams } from 'next/navigation'
-import { Gift, MessageCircle, ImageIcon, Tag, X, ChevronLeft, ChevronRight, Mail, AlertTriangle } from 'lucide-react'
+import { Gift, MessageCircle, X, ChevronLeft, ChevronRight, Mail, AlertTriangle, Send, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { GoogleGenerativeAI, type Part } from '@google/generative-ai'
+
+// Initialize the Google Generative AI client
+const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '')
 
 const ActionButton = ({ icon: Icon, label, onClick, color, badge }: { icon: React.ElementType; label: string; onClick: () => void; color: string; badge?: number }) => (
   <button
     onClick={onClick}
     className={`${color} text-white p-4 rounded-full shadow-lg flex items-center justify-center transition-transform hover:scale-110 active:scale-95 relative`}
     style={{ width: '60px', height: '60px' }}
+    aria-label={label}
   >
     <Icon className="w-7 h-7" />
-    <span className="sr-only">{label}</span>
     {badge && badge > 0 && (
-      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center">
+      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center" aria-label={`${badge} new items`}>
         {badge}
       </span>
     )}
@@ -51,7 +55,7 @@ interface Scene {
 }
 
 const scenes: Scene[] = [
-  { name: 'Winter Wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=67382779&is=6736d5f9&hm=866057b6037659d3c1dd170d7fa0abb21b7b267cbc40b75a1cf70245d90ae059&=&format=webp&quality=lossless&width=1075&height=614', alt: 'Snowy landscape with pine trees' },
+  { name: 'Winter Wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=673aca79&is=673978f9&hm=44792686a05c2b4c218be9a2453af3249354e51220cec7c3d38f3df16f5c485b&=&format=webp&quality=lossless&width=550&height=314', alt: 'Snowy landscape with pine trees' },
   { name: 'Cozy Cabin', src: '/cozy-cabin.png', alt: 'Warm cabin interior with fireplace' },
   { name: 'Starry Night', src: '/starry-night.png', alt: 'Night sky filled with stars' },
   { name: 'Northern Lights', src: '/northern-lights.png', alt: 'Aurora borealis over snowy mountains' },
@@ -68,16 +72,16 @@ const Dialog = ({ isOpen, onClose, children, title }: { isOpen: boolean; onClose
           <Image src="/christmas-items/santa-hat.png" alt="Christmas Hat" width={64} height={64} />
         </div>
         
-        <div className="absolute -top-4 -left-4 w-8 h-8 bg-red-500 rounded-full border-4 border-gold animate-pulse"></div>
-        <div className="absolute -top-4 -right-4 w-8 h-8 bg-green-500 rounded-full border-4 border-gold animate-pulse"></div>
-        <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-blue-500 rounded-full border-4 border-gold animate-pulse"></div>
-        <div className="absolute -bottom-4 -right-4 w-8 h-8 bg-yellow-500 rounded-full border-4 border-gold animate-pulse"></div>
+        <div className="absolute -top-4 -left-4 w-8 h-8 bg-red-500 rounded-full border-4 border-yellow-400 animate-pulse"></div>
+        <div className="absolute -top-4 -right-4 w-8 h-8 bg-green-500 rounded-full border-4 border-yellow-400 animate-pulse"></div>
+        <div className="absolute -bottom-4 -left-4 w-8 h-8 bg-blue-500 rounded-full border-4 border-yellow-400 animate-pulse"></div>
+        <div className="absolute -bottom-4 -right-4 w-8 h-8 bg-yellow-500 rounded-full border-4 border-yellow-400 animate-pulse"></div>
         
         <div className="mt-6 h-full flex flex-col">
           <h2 className="text-3xl font-bold text-center mb-6 text-green-800">{title}</h2>
           <div className="flex-1 overflow-hidden">{children}</div>
         </div>
-        <button onClick={onClose} className="absolute top-2 right-2 text-red-500 hover:text-red-700">
+        <button onClick={onClose} className="absolute top-2 right-2 text-red-500 hover:text-red-700" aria-label="Close">
           <X size={24} />
         </button>
       </div>
@@ -112,6 +116,9 @@ const EGiftCard = ({ theme, selected, onClick }: { theme: string; selected: bool
         selected ? 'ring-2 ring-white shadow-lg scale-105' : 'hover:shadow-md'
       }`}
       onClick={onClick}
+      role="button"
+      aria-pressed={selected}
+      aria-label={`Select ${currentTheme.title} theme`}
     >
       <div className="text-center text-white">
         <div className="text-4xl mb-2">{currentTheme.icon}</div>
@@ -149,7 +156,7 @@ const GiftingDialog = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
           <Image src="/christmas-items/santa-hat.png" alt="Christmas Hat" width={64} height={64} />
         </div>
         
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700" aria-label="Close">
           <X className="h-6 w-6" />
         </button>
 
@@ -234,16 +241,16 @@ const MessageBubble = ({ sender, text }: { sender: string; text: string }) => (
       }}
     >
       {/* Corner accents */}
-      <svg className="absolute -top-1 -left-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+      <svg className="absolute -top-1 -left-1 w-6 h-6 text-black" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M2 22 L22 2" stroke="currentColor" strokeWidth="2" fill="none" />
       </svg>
-      <svg className="absolute -top-1 -right-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+      <svg className="absolute -top-1 -right-1 w-6 h-6 text-black" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M2 2 L22 22" stroke="currentColor" strokeWidth="2" fill="none" />
       </svg>
-      <svg className="absolute -bottom-1 -left-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+      <svg className="absolute -bottom-1 -left-1 w-6 h-6 text-black" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M2 2 L22 22" stroke="currentColor" strokeWidth="2" fill="none" />
       </svg>
-      <svg className="absolute -bottom-1 -right-1 w-6 h-6 text-black" viewBox="0 0 24 24">
+      <svg className="absolute -bottom-1 -right-1 w-6 h-6 text-black" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M2 22 L22 2" stroke="currentColor" strokeWidth="2" fill="none" />
       </svg>
 
@@ -280,15 +287,15 @@ const MessageBubble = ({ sender, text }: { sender: string; text: string }) => (
     </div>
 
     {/* Snowflakes decoration */}
-    <div className="absolute -top-2 left-1/4 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
-    <div className="absolute -top-2 right-1/4 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
-    <div className="absolute -bottom-2 left-1/3 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
-    <div className="absolute -bottom-2 right-1/3 text-2xl opacity-0 group-hover:opacity-100 transition-opacity">❄️</div>
+    <div className="absolute -top-2 left-1/4 text-2xl opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">❄️</div>
+    <div className="absolute -top-2 right-1/4 text-2xl opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">❄️</div>
+    <div className="absolute -bottom-2 left-1/3 text-2xl opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">❄️</div>
+    <div className="absolute -bottom-2 right-1/3 text-2xl opacity-0 group-hover:opacity-100 transition-opacity" aria-hidden="true">❄️</div>
   </div>
 );
 
 const Snowfall = () => (
-  <div className="fixed inset-0 pointer-events-none z-50">
+  <div className="fixed inset-0 pointer-events-none z-50" aria-hidden="true">
     {[...Array(50)].map((_, i) => (
       <div
         key={i}
@@ -306,7 +313,7 @@ const Snowfall = () => (
 )
 
 const ChristmasLights = () => (
-  <div className="fixed top-0 left-0 w-full h-8 z-40">
+  <div className="fixed top-0 left-0 w-full h-8 z-40" aria-hidden="true">
     {[...Array(20)].map((_, i) => (
       <div
         key={i}
@@ -321,12 +328,180 @@ const ChristmasLights = () => (
   </div>
 )
 
+interface ChatMessage {
+  id: string
+  content: string
+  role: 'user' | 'santa'
+  timestamp: Date
+}
+
+const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: '1',
+      content: "Ho ho ho! I'm Santa Claus! What would you like to talk about?",
+      role: 'santa',
+      timestamp: new Date()
+    }
+  ])
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [model, setModel] = useState<any>(null)
+
+  useEffect(() => {
+    async function loadModel() {
+      const modelAttachment = await fetch('https://hebbkx1anhila5yf.public.blob.vercel-storage.com/snippet-JK9ZdY144njlWc7ycNzD64vTQWklRS.txt')
+      const modelContent = await modelAttachment.text()
+      const generativeModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
+      const chat = await generativeModel.startChat({
+        history: [
+          {
+            role: "user",
+            parts: [{ text: modelContent }] as Part[],
+          },
+          {
+            role: "model",
+            parts: [{ text: "Understood. I will act as Santa Claus and respond to messages in that character." }] as Part[],
+          },
+        ],
+      })
+      setModel(chat)
+    }
+    loadModel()
+  }, [])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!input.trim() || isLoading || !model) return
+
+    const userMessage: ChatMessage = {
+      id: Date.now().toString(),
+      content: input.trim(),
+      role: 'user',
+      timestamp: new Date()
+    }
+
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+    setIsLoading(true)
+
+    try {
+      const result = await model.sendMessage(userMessage.content)
+      const response = await result.response
+      const santaMessage: ChatMessage = {
+        id: Date.now().toString(),
+        content: response.text() || "Ho ho ho! Let me think about that...",
+        role: 'santa',
+        timestamp: new Date()
+      }
+
+      setMessages(prev => [...prev, santaMessage])
+    } catch (error) {
+      console.error('Error:', error)
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        content: "Ho ho ho! My elves are having trouble with the connection. Can you try again?",
+        role: 'santa',
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-gradient-to-b from-red-100 to-green-100 rounded-3xl p-8 max-w-2xl w-full mx-4 h-[90vh] relative shadow-lg">
+        <button onClick={onClose} className="absolute top-2 right-2 text-red-500 hover:text-red-700" aria-label="Close chat">
+          <X size={24} />
+        </button>
+        <div className="flex flex-col h-full">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="relative w-12 h-12 rounded-full overflow-hidden border-2 border-white">
+              <Image
+                src="/christmas-items/santa-hat.png"
+                alt="Santa's avatar"
+                fill
+                className="object-cover"
+              />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Chat with Santa</h2>
+              <p className="text-sm opacity-90">Powered by Christmas Magic ✨</p>
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+            <AnimatePresence initial={false}>
+              {messages.map((message) => (
+                <motion.div
+                  key={message.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-2xl p-4 ${
+                      message.role === 'user'
+                        ? 'bg-green-600 text-white'
+                        : 'bg-white text-gray-800'
+                    }`}
+                  >
+                    <p className="text-sm">{message.content}</p>
+                    <span className="text-xs opacity-70 mt-1 block">
+                      {message.timestamp.toLocaleTimeString()}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            {isLoading && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-start"
+              >
+                <div className="bg-white rounded-2xl p-4">
+                  <Loader2 className="w-5 h-5 animate-spin text-red-600" />
+                </div>
+              </motion.div>
+            )}
+          </div>
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Ask Santa anything..."
+              className="flex-1 rounded-full px-4 py-2 bg-white border border-gray-200 focus:outline-none focus:ring-2 focus:ring-red-500"
+              disabled={isLoading}
+            />
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="bg-red-600 text-white rounded-full p-2 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Send className="w-5 h-5" />
+              <span className="sr-only">Send message</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ChristmasPage() {
   const searchParams = useSearchParams()
   const [timeUntilChristmas, setTimeUntilChristmas] = useState('')
   const [showMessagePopup, setShowMessagePopup] = useState(false)
   const [showMessagesPopup, setShowMessagesPopup] = useState(false)
   const [showGiftingPopup, setShowGiftingPopup] = useState(false)
+  const [showChatWithSanta, setShowChatWithSanta] = useState(false)
   const [message, setMessage] = useState('')
   const [senderName, setSenderName] = useState('')
   const [messages, setMessages] = useState<Message[]>([])
@@ -393,6 +568,19 @@ export default function ChristmasPage() {
       if (direction === 'next') return (prev + 1) % scenes.length
       return prev === 0 ? scenes.length - 1 : prev - 1
     })
+  }
+
+  const isChristmasDay = () => {
+    const now = new Date()
+    return now.getMonth() === 11 && now.getDate() === 25
+  }
+
+  const handleViewMessages = () => {
+    if (isChristmasDay()) {
+      setShowMessagesPopup(true)
+    } else {
+      alert("Messages can only be opened on Christmas Day (December 25th)!")
+    }
   }
 
   return (
@@ -476,23 +664,17 @@ export default function ChristmasPage() {
             color="bg-gradient-to-br from-purple-500 to-purple-700"
           />
           <ActionButton
-            icon={ImageIcon}
-            label="Add Photo"
-            onClick={() => console.log('Add Photo clicked')}
-            color="bg-gradient-to-br from-orange-500 to-orange-700"
-          />
-          <ActionButton
-            icon={Tag}
-            label="Add Tag"
-            onClick={() => console.log('Add Tag clicked')}
-            color="bg-gradient-to-br from-green-500 to-green-700"
-          />
-          <ActionButton
             icon={Mail}
             label="View Messages"
-            onClick={() => setShowMessagesPopup(true)}
+            onClick={handleViewMessages}
             color="bg-gradient-to-br from-blue-500 to-blue-700"
             badge={messages.length}
+          />
+          <ActionButton
+            icon={MessageCircle}
+            label="Chat with Santa"
+            onClick={() => setShowChatWithSanta(true)}
+            color="bg-gradient-to-br from-red-500 to-green-500"
           />
         </div>
 
@@ -502,6 +684,7 @@ export default function ChristmasPage() {
             whileHover={{ scale: 1.1, backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
             whileTap={{ scale: 0.9 }}
             onClick={() => changeScene('prev')}
+            aria-label="Previous scene"
           >
             <ChevronLeft className="w-6 h-6" />
           </motion.button>
@@ -510,6 +693,7 @@ export default function ChristmasPage() {
             whileHover={{ scale: 1.1, backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
             whileTap={{ scale: 0.9 }}
             onClick={() => changeScene('next')}
+            aria-label="Next scene"
           >
             <ChevronRight className="w-6 h-6" />
           </motion.button>
@@ -571,6 +755,11 @@ export default function ChristmasPage() {
       <GiftingDialog 
         isOpen={showGiftingPopup}
         onClose={() => setShowGiftingPopup(false)}
+      />
+
+      <ChatWithSanta 
+        isOpen={showChatWithSanta}
+        onClose={() => setShowChatWithSanta(false)}
       />
     </div>
   )
