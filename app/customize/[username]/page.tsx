@@ -37,7 +37,7 @@ interface PlacedOrnament {
   y: number
 }
 
-export default function CustomizePage({ params }: { params: { username: string } }) {
+export default function CustomizePage() {
   const [treeColor, setTreeColor] = useState(treeColors[0].value)
   const [backgroundTheme, setBackgroundTheme] = useState(backgroundThemes[0].value)
   const [placedOrnaments, setPlacedOrnaments] = useState<PlacedOrnament[]>([])
@@ -59,7 +59,7 @@ export default function CustomizePage({ params }: { params: { username: string }
     setIsCreating(true)
     setTimeout(() => {
       localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, backgroundTheme, placedOrnaments }))
-      router.push(`/${params.username}`)
+      router.push('/')
     }, 3000) // 3 seconds for the creation animation
   }
 
