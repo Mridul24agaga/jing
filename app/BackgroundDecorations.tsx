@@ -209,7 +209,7 @@ const AnimatedSantaSleigh = () => {
       animate={controls}
     >
       <motion.img
-        src="https://media.discordapp.net/attachments/1193183717548638301/1306676569800048740/4c137b49-c6fc-4295-b4db-7511490e4546_image-removebg-preview_1.png?ex=6738da63&is=673788e3&hm=987f7105470d6cf3fa130646f997cdbe34190fa465f1a1f4922febb5938071cf&=&format=webp&quality=lossless"
+        src="https://media.discordapp.net/attachments/1193183717548638301/1306676569800048740/4c137b49-c6fc-4295-b4db-7511490e4546_image-removebg-preview_1.png?ex=673e2063&is=673ccee3&hm=486a901be8f7804993d21f36c8ac3a044ae49bbb9bd7f98ae173830bf6346ee9&=&format=webp&quality=lossless"
         alt="Santa&apos;s Sleigh"
         className="w-32 h-auto md:w-64"
         animate={{
