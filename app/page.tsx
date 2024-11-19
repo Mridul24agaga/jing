@@ -1,13 +1,18 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
-import { motion, AnimatePresence, useAnimation } from 'framer-motion'
-import { Gift, Snowflake, Loader, Volume2, VolumeX, TreesIcon as Tree, Star } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Gift, Loader, Volume2, VolumeX, X } from 'lucide-react'
 import Snowfall from 'react-snowfall'
 import useSound from 'use-sound'
 import confetti from 'canvas-confetti'
+import { createClient } from '@supabase/supabase-js'
+import BackgroundDecorations from './BackgroundDecorations'
+import FindJingleBox from './FindJingleBox'
+
+// Initialize Supabase client
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
 const ChristmasCountdown = () => {
   const [timeLeft, setTimeLeft] = useState({
@@ -61,294 +66,15 @@ const ChristmasCountdown = () => {
   )
 }
 
-const AnimatedChristmasTree = () => {
-  return (
-    <motion.div
-      className="absolute left-4 md:left-10 bottom-4 md:bottom-10 text-green-500"
-      initial={{ scale: 0 }}
-      animate={{ scale: 1, rotate: [0, 10, -10, 0] }}
-      transition={{ duration: 2, repeat: Infinity, repeatType: 'reverse' }}
-    >
-      <Tree size={50} className="md:w-24 md:h-24" />
-    </motion.div>
-  )
-}
-
-const FallingGifts = () => {
-  const gifts = Array.from({ length: 10 }).map((_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    delay: Math.random() * 5,
-  }))
-
-  return (
-    <>
-      {gifts.map((gift) => (
-        <motion.div
-          key={gift.id}
-          className="absolute text-red-500"
-          style={{ left: `${gift.x}%` }}
-          initial={{ y: -50, opacity: 0 }}
-          animate={{ y: '100vh', opacity: 1 }}
-          transition={{ duration: 10, repeat: Infinity, delay: gift.delay }}
-        >
-          <Gift size={24} />
-        </motion.div>
-      ))}
-    </>
-  )
-}
-
-const CursorTrail = () => {
-  const [trail, setTrail] = useState<Array<{ x: number; y: number; id: number }>>([])
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-
-  const updateMousePosition = useCallback((ev: MouseEvent) => {
-    setMousePosition({ x: ev.clientX, y: ev.clientY })
-  }, [])
-
-  useEffect(() => {
-    window.addEventListener('mousemove', updateMousePosition)
-    return () => window.removeEventListener('mousemove', updateMousePosition)
-  }, [updateMousePosition])
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTrail((prevTrail) => [
-        ...prevTrail.slice(-20),
-        { x: mousePosition.x, y: mousePosition.y, id: Date.now() },
-      ])
-    }, 50)
-
-    return () => clearInterval(timer)
-  }, [mousePosition])
-
-  return (
-    <>
-      {trail.map((point, index) => (
-        <motion.div
-          key={point.id}
-          className="fixed pointer-events-none"
-          style={{
-            left: point.x,
-            top: point.y,
-            position: 'fixed',
-            width: 10,
-            height: 10,
-            backgroundColor: `hsl(${index * 10}, 100%, 50%)`,
-            borderRadius: '50%',
-          }}
-          initial={{ scale: 1, opacity: 0.8 }}
-          animate={{ scale: 0, opacity: 0 }}
-          transition={{ duration: 1 }}
-        />
-      ))}
-    </>
-  )
-}
-
-const TwinklingStars = () => {
-  const stars = Array.from({ length: 50 }).map((_, i) => ({
-    id: i,
-    x: Math.random() * 100,
-    y: Math.random() * 100,
-    size: Math.random() * 3 + 1,
-  }))
-
-  return (
-    <>
-      {stars.map((star) => (
-        <motion.div
-          key={star.id}
-          className="absolute text-yellow-200"
-          style={{ left: `${star.x}%`, top: `${star.y}%` }}
-          animate={{ opacity: [0.2, 1, 0.2] }}
-          transition={{ duration: 3, repeat: Infinity, repeatType: 'reverse' }}
-        >
-          <Star size={star.size} />
-        </motion.div>
-      ))}
-    </>
-  )
-}
-
-const FestiveGreeting = () => {
-  const greetings = [
-    "Merry Christmas!",
-    "Happy Holidays!",
-    "Season's Greetings!",
-    "Joy to the World!",
-    "Let it Snow!",
-  ]
-
-  const [currentGreeting, setCurrentGreeting] = useState(greetings[0])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentGreeting(greetings[Math.floor(Math.random() * greetings.length)])
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  return (
-    <motion.div
-      className="absolute top-4 left-1/2 transform -translate-x-1/2 text-2xl md:text-4xl font-bold text-yellow-300"
-      initial={{ y: -50, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      exit={{ y: -50, opacity: 0 }}
-      key={currentGreeting}
-    >
-      {currentGreeting}
-    </motion.div>
-  )
-}
-
-const SurpriseGift = () => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [playUnwrap] = useSound('/sounds/unwrap.mp3')
-
-  const handleClick = () => {
-    setIsOpen(!isOpen)
-    playUnwrap()
-  }
-
-  return (
-    <motion.div
-      className="absolute right-4 md:right-10 bottom-20 cursor-pointer"
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.9 }}
-      onClick={handleClick}
-    >
-      {isOpen ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="bg-yellow-300 text-red-600 p-4 rounded-lg shadow-lg"
-        >
-          <p className="font-bold">You're awesome!</p>
-          <p className="text-sm">Spread the joy!</p>
-        </motion.div>
-      ) : (
-        <Gift size={40} className="md:w-16 md:h-16 text-red-500" />
-      )}
-    </motion.div>
-  )
-}
-
-const AnimatedSantaSleigh = () => {
-  const controls = useAnimation()
-  const [position, setPosition] = useState({ x: 0, y: 0 })
-
-  useEffect(() => {
-    const updatePosition = () => {
-      const newX = Math.random() * 100
-      const newY = Math.random() * 100
-      setPosition({ x: newX, y: newY })
-    }
-
-    // Initial position update
-    updatePosition()
-
-    // Set up interval to update position every 2-3 minutes
-    const interval = setInterval(() => {
-      updatePosition()
-    }, (2 + Math.random()) * 60 * 1000) // Random time between 2-3 minutes
-
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    controls.start({
-      x: `${position.x}%`,
-      y: `${position.y}%`,
-      transition: { duration: 5, ease: "easeInOut" }
-    })
-  }, [position, controls])
-
-  return (
-    <motion.div
-      className="fixed pointer-events-none z-50"
-      style={{ width: '100%', height: '100%' }}
-      animate={controls}
-    >
-      <motion.img
-        src="https://media.discordapp.net/attachments/1193183717548638301/1306676569800048740/4c137b49-c6fc-4295-b4db-7511490e4546_image-removebg-preview_1.png?ex=6738da63&is=673788e3&hm=987f7105470d6cf3fa130646f997cdbe34190fa465f1a1f4922febb5938071cf&=&format=webp&quality=lossless"
-        alt="Santa's Sleigh"
-        className="w-32 h-auto md:w-64"
-        animate={{
-          rotate: [-5, 5, -5],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          repeatType: "reverse",
-          ease: "easeInOut"
-        }}
-      />
-    </motion.div>
-  )
-}
-
-const FloatingLyrics = () => {
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
-  const lyrics = [
-    "Jingle bells, jingle bells",
-    "Jingle all the way",
-    "Oh what fun it is to ride",
-    "In a one-horse open sleigh",
-    "Dashing through the snow",
-    "In a one-horse open sleigh",
-    "O'er the fields we go",
-    "Laughing all the way",
-  ]
-
-  useEffect(() => {
-    setDimensions({
-      width: window.innerWidth,
-      height: window.innerHeight
-    })
-
-    const handleResize = () => {
-      setDimensions({
-        width: window.innerWidth,
-        height: window.innerHeight
-      })
-    }
-
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  return (
-    <>
-      {lyrics.map((line, index) => (
-        <motion.div
-          key={index}
-          className="absolute text-white text-opacity-50 pointer-events-none"
-          initial={{ opacity: 0, x: 0, y: 0 }}
-          animate={{
-            opacity: [0, 1, 0],
-            x: Math.random() * (dimensions.width || 100),
-            y: Math.random() * (dimensions.height || 100),
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            delay: index * 2,
-          }}
-        >
-          {line}
-        </motion.div>
-      ))}
-    </>
-  )
-}
-
 export default function LandingPage() {
   const [username, setUsername] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSoundOn, setIsSoundOn] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [showSignUp, setShowSignUp] = useState(false)
+  const [showFindJingleBox, setShowFindJingleBox] = useState(false)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const router = useRouter()
 
   const [playJingleBells, { stop: stopJingleBells }] = useSound('/sounds/jingle-bells.mp3', { loop: true })
@@ -365,28 +91,121 @@ export default function LandingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError(null)
     playClick()
     confetti({
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 }
     })
-    // Simulate API call or processing time
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    router.push(`/customize/${username}`)
+
+    try {
+      if (!username.trim()) {
+        throw new Error("Username cannot be empty")
+      }
+
+      const { data: existingUser, error: checkError } = await supabase
+        .from('christmas_pages')
+        .select('username')
+        .eq('username', username.trim())
+        .single()
+
+      if (checkError) {
+        if (checkError.code === 'PGRST116') {
+          setShowSignUp(true)
+        } else {
+          console.error('Error checking username:', checkError)
+          throw new Error(`An error occurred while checking the username: ${checkError.message}`)
+        }
+      } else if (existingUser) {
+        throw new Error("This username is already taken. Please choose another one.")
+      } else {
+        throw new Error("An unexpected error occurred. Please try again.")
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      setError(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+
+    try {
+      // Check if the user already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('user_profiles')
+        .select('user_id')
+        .eq('username', username.trim())
+        .single()
+
+      if (existingUser) {
+        throw new Error("This username is already taken. Please choose another one.")
+      }
+
+      // If the user doesn't exist, proceed with sign up
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            username: username,
+          }
+        }
+      })
+
+      if (error) {
+        if (error.message.includes("User already registered")) {
+          throw new Error("This email is already registered. Please use a different email or try logging in.")
+        }
+        throw error
+      }
+
+      if (data.user) {
+        // Insert into christmas_pages
+        const { error: pageError } = await supabase
+          .from('christmas_pages')
+          .insert([{ username: username.trim(), user_id: data.user.id }])
+
+        if (pageError) {
+          if (pageError.code === '23505') { // Unique constraint violation
+            throw new Error("This username is already taken. Please choose another one.")
+          }
+          throw pageError
+        }
+
+        // Insert into user_profiles
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert([{ user_id: data.user.id, username: username.trim() }])
+
+        if (profileError) {
+          if (profileError.code === '23505') { // Unique constraint violation
+            throw new Error("This username is already taken. Please choose another one.")
+          }
+          throw profileError
+        }
+
+        router.push(`/customize/${username.trim()}`)
+      } else {
+        throw new Error("Failed to create user. Please try again.")
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      setError(error instanceof Error ? error.message : "An unexpected error occurred during sign up. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-red-700 via-green-800 to-blue-900 text-white p-4 md:p-8 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-b from-[#8B4513] via-green-800 to-blue-900 text-white p-4 md:p-8 relative overflow-hidden">
       <Snowfall snowflakeCount={200} />
-      <FallingGifts />
-      <AnimatedChristmasTree />
-      <CursorTrail />
-      <TwinklingStars />
-      <FestiveGreeting />
-      <SurpriseGift />
-      <AnimatedSantaSleigh />
-      <FloatingLyrics />
+      <BackgroundDecorations />
       
       <motion.h1 
         className="text-4xl md:text-6xl font-bold text-center mb-8 mt-16"
@@ -401,51 +220,73 @@ export default function LandingPage() {
 
       <ChristmasCountdown />
       
-      <motion.div 
-        className="max-w-md mx-auto bg-gray-900 bg-opacity-80 backdrop-blur-md text-white rounded-xl shadow-2xl p-6 md:p-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center">Create Your Christmas Page</h2>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
-              Choose your page name
-            </label>
-            <div className="flex rounded-lg overflow-hidden bg-gray-800">
-              <span className="inline-flex items-center px-3 border-r border-gray-700 bg-gray-700 text-gray-300 text-sm font-mono">
-                jinglebox.pro/
-              </span>
-              <input
-                type="text"
-                id="username"
-                name="username"
-                required
-                className="flex-1 block w-full px-3 py-2 bg-transparent text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
-                placeholder="yourpagename"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-              />
-            </div>
-          </div>
-          
-          <motion.button
-            type="submit"
-            className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-red-600 to-green-600 hover:from-red-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            disabled={isLoading}
+      <AnimatePresence mode="wait">
+        {!showFindJingleBox ? (
+          <motion.div 
+            key="create-form"
+            className="max-w-md mx-auto bg-gray-900 bg-opacity-80 backdrop-blur-md text-white rounded-xl shadow-2xl p-6 md:p-8"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
           >
-            {isLoading ? (
-              <Loader className="animate-spin mr-2" size={20} />
-            ) : (
-              <Gift className="mr-2" size={20} />
-            )}
-            {isLoading ? 'Creating Your JingleBox...' : 'Claim My Jingle Page'}
-          </motion.button>
-        </form>
-      </motion.div>
+            <h2 className="text-2xl md:text-3xl font-semibold mb-6 text-center">Create Your Christmas Page</h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label htmlFor="username" className="block text-sm font-medium text-gray-300 mb-2">
+                  Choose your page name
+                </label>
+                <div className="flex rounded-lg overflow-hidden bg-gray-800">
+                  <span className="inline-flex items-center px-3 border-r border-gray-700 bg-gray-700 text-gray-300 text-sm font-mono">
+                    jinglebox.pro/
+                  </span>
+                  <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    required
+                    className="flex-1 block w-full px-3 py-2 bg-transparent text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500 font-mono"
+                    placeholder="yourpagename"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                  />
+                </div>
+                {error && (
+                  <div className="text-red-500 text-sm mt-2">
+                    {error}
+                  </div>
+                )}
+              </div>
+              
+              <motion.button
+                type="submit"
+                className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-red-600 to-green-600 hover:from-red-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <Loader className="animate-spin mr-2" size={20} />
+                ) : (
+                  <Gift className="mr-2" size={20} />
+                )}
+                {isLoading ? 'Creating Your JingleBox...' : 'Claim My Jingle Page'}
+              </motion.button>
+            </form>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="find-form"
+            className="max-w-md mx-auto"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5 }}
+          >
+            <FindJingleBox />
+          </motion.div>
+        )}
+      </AnimatePresence>
       
       <motion.div 
         className="mt-8 text-center"
@@ -453,10 +294,15 @@ export default function LandingPage() {
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
       >
-        <p className="text-gray-300">Already have a page?</p>
-        <Link href="/find" className="text-yellow-300 hover:underline">
-          Find an existing JingleBox
-        </Link>
+        <p className="text-gray-300">
+          {showFindJingleBox ? "Don't have a page yet?" : "Already have a page?"}
+        </p>
+        <button
+          onClick={() => setShowFindJingleBox(!showFindJingleBox)}
+          className="text-yellow-300 hover:underline"
+        >
+          {showFindJingleBox ? "Create a new JingleBox" : "Find an existing JingleBox"}
+        </button>
       </motion.div>
 
       <motion.button
@@ -469,17 +315,69 @@ export default function LandingPage() {
       </motion.button>
 
       <AnimatePresence>
-        {isLoading && (
+        {showSignUp && (
           <motion.div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+            style={{ zIndex: 50 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <div className="text-white text-2xl">
-              <Loader className="animate-spin inline-block mr-2" size={30} />
-              Creating your magical JingleBox...
-            </div>
+            <motion.div
+              className="bg-gray-900 p-8 rounded-lg shadow-xl max-w-md w-full"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+            >
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold">Sign Up</h2>
+                <button onClick={() => setShowSignUp(false)} className="text-gray-400 hover:text-white">
+                  <X size={24} />
+                </button>
+              </div>
+              <form onSubmit={handleSignUp} className="space-y-4">
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    required
+                    className="w-full px-3 py-2 bg-gray-800 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
+                    Password
+                  </label>
+                  <input
+                    type="password"
+                    id="password"
+                    required
+                    className="w-full px-3 py-2 bg-gray-800 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-red-500"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+                {error && (
+                  <div className="text-red-500 text-sm">
+                    {error}
+                  </div>
+                )}
+                <motion.button
+                  type="submit"
+                  className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-red-600 to-green-600 hover:from-red-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Signing Up...' : 'Sign Up'}
+                </motion.button>
+              </form>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
