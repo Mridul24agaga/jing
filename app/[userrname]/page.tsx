@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import { Gift, MessageCircle, X, ChevronLeft, ChevronRight, Mail, AlertTriangle, Send, Loader2 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GoogleGenerativeAI, type Part } from '@google/generative-ai'
+import  Snow from "@/public/snow.jpg"
 
 // Initialize the Google Generative AI client
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '')
@@ -55,8 +56,8 @@ interface Scene {
 }
 
 const scenes: Scene[] = [
-  { name: 'Winter Wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=673aca79&is=673978f9&hm=44792686a05c2b4c218be9a2453af3249354e51220cec7c3d38f3df16f5c485b&=&format=webp&quality=lossless&width=550&height=314', alt: 'Snowy landscape with pine trees' },
-  { name: 'Cozy Cabin', src: '/cozy-cabin.png', alt: 'Warm cabin interior with fireplace' },
+  { name: 'Winter Wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=673ebef9&is=673d6d79&hm=8e3574e6c94f30d2cb6965ade2f2e3ddc13c446ac90f5ff36f5c8157b4ddb449&=&format=webp&quality=lossless&width=550&height=314', alt: 'Snowy landscape with pine trees' },
+  { name: 'Cozy Cabin', src: '/snow.jpg', alt: 'Warm cabin interior with fireplace' },
   { name: 'Starry Night', src: '/starry-night.png', alt: 'Night sky filled with stars' },
   { name: 'Northern Lights', src: '/northern-lights.png', alt: 'Aurora borealis over snowy mountains' },
   { name: 'Christmas Market', src: '/christmas-market.png', alt: 'Festive market with stalls and lights' },

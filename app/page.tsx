@@ -86,6 +86,11 @@ export default function LandingPage() {
     } else {
       stopJingleBells()
     }
+
+    // Clean up function to stop the music when component unmounts
+    return () => {
+      stopJingleBells()
+    }
   }, [isSoundOn, playJingleBells, stopJingleBells])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -114,17 +119,19 @@ export default function LandingPage() {
         if (checkError.code === 'PGRST116') {
           setShowSignUp(true)
         } else {
-          console.error('Error checking username:', checkError)
           throw new Error(`An error occurred while checking the username: ${checkError.message}`)
         }
       } else if (existingUser) {
         throw new Error("This username is already taken. Please choose another one.")
-      } else {
-        throw new Error("An unexpected error occurred. Please try again.")
       }
     } catch (error) {
-      console.error('Error:', error)
-      setError(error instanceof Error ? error.message : "An unexpected error occurred. Please try again.")
+      if (error instanceof Error) {
+        console.error('Error:', error.message)
+        setError(error.message)
+      } else {
+        console.error('An unexpected error occurred:', error)
+        setError("An unexpected error occurred. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -195,8 +202,13 @@ export default function LandingPage() {
         throw new Error("Failed to create user. Please try again.")
       }
     } catch (error) {
-      console.error('Error:', error)
-      setError(error instanceof Error ? error.message : "An unexpected error occurred during sign up. Please try again.")
+      if (error instanceof Error) {
+        console.error('Error:', error.message)
+        setError(error.message)
+      } else {
+        console.error('An unexpected error occurred during sign up:', error)
+        setError("An unexpected error occurred during sign up. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
