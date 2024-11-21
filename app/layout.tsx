@@ -22,7 +22,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <meta name="bbb17246ac17412d9e659c9964b920067ab5c66f" content="bbb17246ac17412d9e659c9964b920067ab5c66f" />
+      </head>
       <body className={inter.className}>{children}</body>
     </html>
   )
 }
+
