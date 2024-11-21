@@ -336,28 +336,17 @@ interface ChatMessage {
 }
 
 const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: '1',
+      content: "Ho ho ho! I'm Santa Claus! What would you like to talk about?",
+      role: 'santa',
+      timestamp: new Date()
+    }
+  ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [model, setModel] = useState<any>(null)
-
-  useEffect(() => {
-    // Load messages from localStorage
-    const savedMessages = localStorage.getItem('santaChatMessages')
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages))
-    } else {
-      // If no saved messages, add the initial greeting
-      const initialMessage: ChatMessage = {
-        id: '1',
-        content: "Ho ho ho! I'm Santa Claus! What would you like to talk about?",
-        role: 'santa',
-        timestamp: new Date()
-      }
-      setMessages([initialMessage])
-      localStorage.setItem('santaChatMessages', JSON.stringify([initialMessage]))
-    }
-  }, [])
 
   useEffect(() => {
     async function loadModel() {
@@ -392,9 +381,7 @@ const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
       timestamp: new Date()
     }
 
-    const updatedMessages = [...messages, userMessage]
-    setMessages(updatedMessages)
-    localStorage.setItem('santaChatMessages', JSON.stringify(updatedMessages))
+    setMessages(prev => [...prev, userMessage])
     setInput('')
     setIsLoading(true)
 
@@ -408,9 +395,7 @@ const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         timestamp: new Date()
       }
 
-      const newMessages = [...updatedMessages, santaMessage]
-      setMessages(newMessages)
-      localStorage.setItem('santaChatMessages', JSON.stringify(newMessages))
+      setMessages(prev => [...prev, santaMessage])
     } catch (error) {
       console.error('Error:', error)
       const errorMessage: ChatMessage = {
@@ -419,9 +404,7 @@ const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         role: 'santa',
         timestamp: new Date()
       }
-      const newMessages = [...updatedMessages, errorMessage]
-      setMessages(newMessages)
-      localStorage.setItem('santaChatMessages', JSON.stringify(newMessages))
+      setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
     }
@@ -568,12 +551,6 @@ export default function ChristmasPage() {
         setCurrentScene(sceneIndex)
       }
     }
-
-    // Load messages from localStorage
-    const savedMessages = localStorage.getItem('christmasMessages')
-    if (savedMessages) {
-      setMessages(JSON.parse(savedMessages))
-    }
   }, [])
 
   const handleMessageSubmit = (e: React.FormEvent | null, urlMessage?: string) => {
@@ -594,9 +571,7 @@ export default function ChristmasPage() {
           itemType: christmasItems[Math.floor(Math.random() * christmasItems.length)],
           sender: sender
         }
-        const updatedMessages = [...messages, newMessage]
-        setMessages(updatedMessages)
-        localStorage.setItem('christmasMessages', JSON.stringify(updatedMessages))
+        setMessages(prevMessages => [...prevMessages, newMessage])
         setMessage('')
         setSenderName('')
         setShowMessagePopup(false)
@@ -810,4 +785,3 @@ export default function ChristmasPage() {
     </div>
   )
 }
-
