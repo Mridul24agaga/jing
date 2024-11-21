@@ -2,11 +2,10 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
-import { useSearchParams } from 'next/navigation'
-import { Gift, MessageCircle, X, ChevronLeft, ChevronRight, Mail, AlertTriangle, Send, Loader2 } from 'lucide-react'
+import { useSearchParams, useParams } from 'next/navigation'
+import { Gift, MessageCircle, X, ChevronLeft, ChevronRight, Mail, AlertTriangle, Send, Loader2, Palette, Mountain, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GoogleGenerativeAI, type Part } from '@google/generative-ai'
-import  Snow from "@/public/snow.jpg"
 
 // Initialize the Google Generative AI client
 const genAI = new GoogleGenerativeAI(process.env.NEXT_PUBLIC_GEMINI_API_KEY || '')
@@ -49,18 +48,18 @@ const ornamentPositions = [
   { x: 20, y: 75 }, { x: 30, y: 75 }, { x: 40, y: 75 }, { x: 50, y: 75 }, { x: 60, y: 75 }, { x: 70, y: 75 }, { x: 80, y: 75 }
 ]
 
-interface Scene {
-  name: string
-  src: string
-  alt: string
-}
+const treeColors = [
+  { name: 'Emerald', value: '#2ecc71' },
+  { name: 'Forest', value: '#27ae60' },
+  { name: 'Mint', value: '#1abc9c' },
+  { name: 'Pine', value: '#16a085' }
+]
 
-const scenes: Scene[] = [
-  { name: 'Winter Wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=673ebef9&is=673d6d79&hm=8e3574e6c94f30d2cb6965ade2f2e3ddc13c446ac90f5ff36f5c8157b4ddb449&=&format=webp&quality=lossless&width=550&height=314', alt: 'Snowy landscape with pine trees' },
-  { name: 'Cozy Cabin', src: '/snow.jpg', alt: 'Warm cabin interior with fireplace' },
-  { name: 'Starry Night', src: '/starry-night.png', alt: 'Night sky filled with stars' },
-  { name: 'Northern Lights', src: '/northern-lights.png', alt: 'Aurora borealis over snowy mountains' },
-  { name: 'Christmas Market', src: '/christmas-market.png', alt: 'Festive market with stalls and lights' },
+const scenes = [
+  { name: 'Winter Wonderland', value: 'winter-wonderland', src: 'https://media.discordapp.net/attachments/1193183717548638301/1306303268380741743/5d0facfe-f371-44a6-85e5-1b0867ff4d4c_image.png?ex=673ebef9&is=673d6d79&hm=8e3574e6c94f30d2cb6965ade2f2e3ddc13c446ac90f5ff36f5c8157b4ddb449&=&format=webp&quality=lossless&width=550&height=314', alt: 'Snowy landscape with pine trees' },
+  { name: 'Cozy Cabin', value: 'cozy-cabin', src: '/snow.jpg', alt: 'Warm cabin interior with fireplace' },
+  { name: 'Starry Night', value: 'starry-night', src: '/starry.jpg', alt: 'Night sky filled with stars' },
+  { name: 'Northern Lights', value: 'northern-lights', src: '/northern.jpg', alt: 'Aurora borealis over snowy mountains' },
 ]
 
 const Dialog = ({ isOpen, onClose, children, title }: { isOpen: boolean; onClose: () => void; children: React.ReactNode; title?: string }) => {
@@ -337,17 +336,28 @@ interface ChatMessage {
 }
 
 const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: '1',
-      content: "Ho ho ho! I'm Santa Claus! What would you like to talk about?",
-      role: 'santa',
-      timestamp: new Date()
-    }
-  ])
+  const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [model, setModel] = useState<any>(null)
+
+  useEffect(() => {
+    // Load messages from localStorage
+    const savedMessages = localStorage.getItem('santaChatMessages')
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages))
+    } else {
+      // If no saved messages, add the initial greeting
+      const initialMessage: ChatMessage = {
+        id: '1',
+        content: "Ho ho ho! I'm Santa Claus! What would you like to talk about?",
+        role: 'santa',
+        timestamp: new Date()
+      }
+      setMessages([initialMessage])
+      localStorage.setItem('santaChatMessages', JSON.stringify([initialMessage]))
+    }
+  }, [])
 
   useEffect(() => {
     async function loadModel() {
@@ -382,7 +392,9 @@ const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
       timestamp: new Date()
     }
 
-    setMessages(prev => [...prev, userMessage])
+    const updatedMessages = [...messages, userMessage]
+    setMessages(updatedMessages)
+    localStorage.setItem('santaChatMessages', JSON.stringify(updatedMessages))
     setInput('')
     setIsLoading(true)
 
@@ -396,7 +408,9 @@ const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         timestamp: new Date()
       }
 
-      setMessages(prev => [...prev, santaMessage])
+      const newMessages = [...updatedMessages, santaMessage]
+      setMessages(newMessages)
+      localStorage.setItem('santaChatMessages', JSON.stringify(newMessages))
     } catch (error) {
       console.error('Error:', error)
       const errorMessage: ChatMessage = {
@@ -405,7 +419,9 @@ const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
         role: 'santa',
         timestamp: new Date()
       }
-      setMessages(prev => [...prev, errorMessage])
+      const newMessages = [...updatedMessages, errorMessage]
+      setMessages(newMessages)
+      localStorage.setItem('santaChatMessages', JSON.stringify(newMessages))
     } finally {
       setIsLoading(false)
     }
@@ -498,6 +514,7 @@ const ChatWithSanta = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => vo
 
 export default function ChristmasPage() {
   const searchParams = useSearchParams()
+  const params = useParams()
   const [timeUntilChristmas, setTimeUntilChristmas] = useState('')
   const [showMessagePopup, setShowMessagePopup] = useState(false)
   const [showMessagesPopup, setShowMessagesPopup] = useState(false)
@@ -508,6 +525,8 @@ export default function ChristmasPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [currentScene, setCurrentScene] = useState(0)
   const treeRef = useRef<HTMLDivElement>(null)
+  const [treeColor, setTreeColor] = useState(treeColors[0].value)
+  const [scene, setScene] = useState(scenes[0].value)
 
   useEffect(() => {
     const calculateTimeUntilChristmas = () => {
@@ -536,6 +555,27 @@ export default function ChristmasPage() {
     }
   }, [searchParams])
 
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('jingleboxTheme')
+    if (savedTheme) {
+      const { treeColor: savedTreeColor, scene: savedScene } = JSON.parse(savedTheme)
+      setTreeColor(savedTreeColor)
+      setScene(savedScene)
+      
+      // Set the initial scene based on the saved customization
+      const sceneIndex = scenes.findIndex(s => s.value === savedScene)
+      if (sceneIndex !== -1) {
+        setCurrentScene(sceneIndex)
+      }
+    }
+
+    // Load messages from localStorage
+    const savedMessages = localStorage.getItem('christmasMessages')
+    if (savedMessages) {
+      setMessages(JSON.parse(savedMessages))
+    }
+  }, [])
+
   const handleMessageSubmit = (e: React.FormEvent | null, urlMessage?: string) => {
     if (e) e.preventDefault()
     const messageToAdd = urlMessage || message
@@ -554,7 +594,9 @@ export default function ChristmasPage() {
           itemType: christmasItems[Math.floor(Math.random() * christmasItems.length)],
           sender: sender
         }
-        setMessages(prevMessages => [...prevMessages, newMessage])
+        const updatedMessages = [...messages, newMessage]
+        setMessages(updatedMessages)
+        localStorage.setItem('christmasMessages', JSON.stringify(updatedMessages))
         setMessage('')
         setSenderName('')
         setShowMessagePopup(false)
@@ -616,6 +658,9 @@ export default function ChristmasPage() {
             layout="fill"
             objectFit="contain"
             priority
+            style={{
+              filter: `hue-rotate(${treeColors.findIndex(c => c.value === treeColor) * 30}deg)`,
+            }}
           />
           {messages.map((msg) => (
             <motion.div
@@ -765,3 +810,4 @@ export default function ChristmasPage() {
     </div>
   )
 }
+

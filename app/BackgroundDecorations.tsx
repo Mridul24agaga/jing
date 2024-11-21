@@ -181,8 +181,32 @@ const AnimatedSantaSleigh = () => {
 
   useEffect(() => {
     const updatePosition = () => {
-      const newX = Math.random() * 100
-      const newY = Math.random() * 100
+      // Randomly choose a side (top, right, bottom, left)
+      const side = Math.floor(Math.random() * 4)
+      let newX, newY
+
+      switch (side) {
+        case 0: // Top
+          newX = Math.random() * 100
+          newY = -10
+          break
+        case 1: // Right
+          newX = 110
+          newY = Math.random() * 100
+          break
+        case 2: // Bottom
+          newX = Math.random() * 100
+          newY = 110
+          break
+        case 3: // Left
+          newX = -10
+          newY = Math.random() * 100
+          break
+        default:
+          newX = 0
+          newY = 0
+      }
+
       setPosition({ x: newX, y: newY })
     }
 
@@ -209,8 +233,8 @@ const AnimatedSantaSleigh = () => {
       animate={controls}
     >
       <motion.img
-        src="https://media.discordapp.net/attachments/1193183717548638301/1306676569800048740/4c137b49-c6fc-4295-b4db-7511490e4546_image-removebg-preview_1.png?ex=673e2063&is=673ccee3&hm=486a901be8f7804993d21f36c8ac3a044ae49bbb9bd7f98ae173830bf6346ee9&=&format=webp&quality=lossless"
-        alt="Santa&apos;s Sleigh"
+        src="https://media.discordapp.net/attachments/1193183717548638301/1306676569800048740/4c137b49-c6fc-4295-b4db-7511490e4546_image-removebg-preview_1.png?ex=67401aa3&is=673ec923&hm=1520d496d67a21caf51cf4797b433608a8ce38ab2bebb84cd004fe2751b9dda0&=&format=webp&quality=lossless"
+        alt="Santa's Sleigh"
         className="w-32 h-auto md:w-64"
         animate={{
           rotate: [-5, 5, -5],
@@ -235,7 +259,7 @@ const FloatingLyrics = () => {
     "In a one-horse open sleigh",
     "Dashing through the snow",
     "In a one-horse open sleigh",
-    "O&apos;er the fields we go",
+    "O'er the fields we go",
     "Laughing all the way",
   ]
 
@@ -283,7 +307,7 @@ const FloatingLyrics = () => {
 
 const BackgroundDecorations: React.FC = () => {
   return (
-    <>
+    <div className="fixed inset-0 pointer-events-none overflow-hidden">
       <FallingGifts />
       <AnimatedChristmasTree />
       <CursorTrail />
@@ -292,8 +316,9 @@ const BackgroundDecorations: React.FC = () => {
       <SurpriseGift />
       <AnimatedSantaSleigh />
       <FloatingLyrics />
-    </>
+    </div>
   )
 }
 
 export default BackgroundDecorations
+

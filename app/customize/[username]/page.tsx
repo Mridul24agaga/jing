@@ -1,10 +1,10 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Sparkles, Gift, Star, TreePine, MessageCircle, Palette, Mountain, Snowflake, Cookie, Moon } from 'lucide-react'
+import { Palette, Mountain, Sparkles } from 'lucide-react'
 
 const treeColors = [
   { name: 'Emerald', value: '#2ecc71' },
@@ -13,98 +13,36 @@ const treeColors = [
   { name: 'Pine', value: '#16a085' }
 ]
 
-const backgroundThemes = [
-  { name: 'Winter Wonderland', value: 'winter-wonderland' },
-  { name: 'Cozy Cabin', value: 'cozy-cabin' },
-  { name: 'Starry Night', value: 'starry-night' },
-  { name: 'Northern Lights', value: 'northern-lights' },
-  { name: 'Enchanted Ice Rink', value: 'ice-rink' },
-  { name: 'Gingerbread Village', value: 'gingerbread-village' },
-  { name: 'Aurora Borealis', value: 'aurora-borealis' }
+const scenes = [
+  { name: 'Winter Wonderland', value: 'winter-wonderland', image: '/winter.png' },
+  { name: 'Cozy Cabin', value: 'cozy-cabin', image: '/snow.jpg' },
+  { name: 'Starry Night', value: 'starry-night', image: '/starry.jpg' },
+  { name: 'Northern Lights', value: 'northern-lights', image: '/northern.jpg' },
 ]
-
-const ornaments = [
-  { id: 1, src: '/ornament-red.png', alt: 'Red Ornament' },
-  { id: 2, src: '/ornament-blue.png', alt: 'Blue Ornament' },
-  { id: 3, src: '/ornament-gold.png', alt: 'Gold Ornament' },
-]
-
-interface PlacedOrnament {
-  id: number
-  src: string
-  alt: string
-  x: number
-  y: number
-}
 
 export default function CustomizePage() {
   const [treeColor, setTreeColor] = useState(treeColors[0].value)
-  const [backgroundTheme, setBackgroundTheme] = useState(backgroundThemes[0].value)
-  const [placedOrnaments, setPlacedOrnaments] = useState<PlacedOrnament[]>([])
-  const [draggedOrnament, setDraggedOrnament] = useState<{ id: number; src: string; alt: string } | null>(null)
+  const [scene, setScene] = useState(scenes[0].value)
   const [isCreating, setIsCreating] = useState(false)
+  const [activeTab, setActiveTab] = useState('tree')
   const router = useRouter()
+  const params = useParams()
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('jingleboxTheme')
     if (savedTheme) {
-      const { treeColor: savedTreeColor, backgroundTheme: savedBackgroundTheme, placedOrnaments: savedOrnaments } = JSON.parse(savedTheme)
+      const { treeColor: savedTreeColor, scene: savedScene } = JSON.parse(savedTheme)
       setTreeColor(savedTreeColor)
-      setBackgroundTheme(savedBackgroundTheme)
-      setPlacedOrnaments(savedOrnaments)
+      setScene(savedScene)
     }
   }, [])
 
   const handleSave = () => {
     setIsCreating(true)
     setTimeout(() => {
-      localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, backgroundTheme, placedOrnaments }))
-      router.push('/')
-    }, 3000) // 3 seconds for the creation animation
-  }
-
-  const handleMouseDown = (ornament: { id: number; src: string; alt: string }) => {
-    setDraggedOrnament(ornament)
-  }
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    if (!draggedOrnament || !event.currentTarget) return
-
-    const rect = event.currentTarget.getBoundingClientRect()
-    const x = ((event.clientX - rect.left) / rect.width) * 100
-    const y = ((event.clientY - rect.top) / rect.height) * 100
-
-    if (x >= 0 && x <= 100 && y >= 0 && y <= 100) {
-      setPlacedOrnaments(prevOrnaments => [
-        ...prevOrnaments,
-        { ...draggedOrnament, x, y }
-      ])
-    }
-  }
-
-  const handleMouseUp = () => {
-    setDraggedOrnament(null)
-  }
-
-  const getBackgroundImage = () => {
-    switch (backgroundTheme) {
-      case 'winter-wonderland':
-        return '/winter.png'
-      case 'cozy-cabin':
-        return '/cozy-cabin.png'
-      case 'starry-night':
-        return '/starry-night.png'
-      case 'northern-lights':
-        return '/northern-lights.png'
-      case 'ice-rink':
-        return '/ice-rink.png'
-      case 'gingerbread-village':
-        return '/gingerbread-village.png'
-      case 'aurora-borealis':
-        return '/aurora-borealis.png'
-      default:
-        return '/winter.png'
-    }
+      localStorage.setItem('jingleboxTheme', JSON.stringify({ treeColor, scene }))
+      router.push(`/${params.username}`)
+    }, 3000)
   }
 
   return (
@@ -119,49 +57,63 @@ export default function CustomizePage() {
       </motion.h1>
       
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
-        <motion.div 
-          className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8">
           <h2 className="text-2xl md:text-3xl font-semibold mb-6 md:mb-8 flex items-center">
             <Palette className="mr-2" />
             Customization Options
           </h2>
           
           <div className="space-y-8">
-            <div>
-              <label className="text-lg font-medium mb-4 block">Tree Color</label>
-              <div className="flex space-x-4">
-                {treeColors.map((color) => (
-                  <button
-                    key={color.value}
-                    className={`w-12 h-12 rounded-full transition-transform ${
-                      treeColor === color.value ? 'ring-4 ring-white ring-opacity-50 scale-110' : ''
-                    }`}
-                    style={{ backgroundColor: color.value }}
-                    onClick={() => setTreeColor(color.value)}
-                  />
-                ))}
-              </div>
-            </div>
-            
-            <div>
-              <label className="text-lg font-medium mb-4 block">Background Theme</label>
-              <select
-                value={backgroundTheme}
-                onChange={(e) => setBackgroundTheme(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg bg-white/10 backdrop-blur border border-white/20 
-                          focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+            <div className="flex space-x-4 mb-4">
+              <button
+                className={`px-4 py-2 rounded-full ${activeTab === 'tree' ? 'bg-white text-purple-900' : 'bg-purple-900/50'}`}
+                onClick={() => setActiveTab('tree')}
               >
-                {backgroundThemes.map((theme) => (
-                  <option key={theme.value} value={theme.value} className="text-gray-900">
-                    {theme.name}
-                  </option>
-                ))}
-              </select>
+                Tree
+              </button>
+              <button
+                className={`px-4 py-2 rounded-full ${activeTab === 'scene' ? 'bg-white text-purple-900' : 'bg-purple-900/50'}`}
+                onClick={() => setActiveTab('scene')}
+              >
+                Scene
+              </button>
             </div>
+
+            {activeTab === 'tree' && (
+              <div>
+                <label className="text-lg font-medium mb-4 block">Tree Color</label>
+                <div className="flex space-x-4">
+                  {treeColors.map((color) => (
+                    <button
+                      key={color.value}
+                      className={`w-12 h-12 rounded-full transition-transform ${
+                        treeColor === color.value ? 'ring-4 ring-white ring-opacity-50 scale-110' : ''
+                      }`}
+                      style={{ backgroundColor: color.value }}
+                      onClick={() => setTreeColor(color.value)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'scene' && (
+              <div>
+                <label className="text-lg font-medium mb-4 block">Scene</label>
+                <select
+                  value={scene}
+                  onChange={(e) => setScene(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 backdrop-blur border border-white/20 
+                            focus:outline-none focus:ring-2 focus:ring-purple-500 transition-colors"
+                >
+                  {scenes.map((s) => (
+                    <option key={s.value} value={s.value} className="text-gray-900">
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           
           <button
@@ -173,27 +125,19 @@ export default function CustomizePage() {
           >
             Save Customizations
           </button>
-        </motion.div>
+        </div>
         
-        <motion.div 
-          className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5 }}
-        >
+        <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8">
           <h2 className="text-2xl md:text-3xl font-semibold mb-6 md:mb-8 flex items-center">
             <Mountain className="mr-2" />
             Preview
           </h2>
           <div 
             className="relative aspect-[4/3] rounded-xl overflow-hidden bg-gradient-to-b from-purple-900/50 to-indigo-900/50 backdrop-blur shadow-inner"
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
           >
             <div className="absolute inset-0 bg-gradient-to-b from-blue-900 to-indigo-900">
               <Image
-                src={getBackgroundImage()}
+                src={scenes.find(s => s.value === scene)?.image || '/winter.png'}
                 alt="Scene Background"
                 layout="fill"
                 objectFit="cover"
@@ -241,64 +185,11 @@ export default function CustomizePage() {
                     filter: `hue-rotate(${treeColors.findIndex(c => c.value === treeColor) * 30}deg)`,
                   }}
                 />
-                {placedOrnaments.map((ornament, index) => (
-                  <Image
-                    key={index}
-                    src={ornament.src}
-                    alt={ornament.alt}
-                    width={20}
-                    height={20}
-                    className="absolute"
-                    style={{ left: `${ornament.x}%`, top: `${ornament.y}%` }}
-                  />
-                ))}
               </div>
             </div>
           </div>
-          
-          <div className="mt-4 flex justify-center space-x-4">
-            {ornaments.map((ornament) => (
-              <motion.div
-                key={ornament.id}
-                onMouseDown={() => handleMouseDown(ornament)}
-                className="cursor-grab active:cursor-grabbing"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                <Image
-                  src={ornament.src}
-                  alt={ornament.alt}
-                  width={40}
-                  height={40}
-                />
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
-      </div>
-
-      <motion.div 
-        className="mt-12 text-center"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-      >
-        <h2 className="text-2xl md:text-3xl font-semibold mb-4">New Scenes Available!</h2>
-        <div className="flex justify-center space-x-8">
-          <div className="flex flex-col items-center">
-            <Snowflake className="w-12 h-12 mb-2" />
-            <p>Enchanted Ice Rink</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Cookie className="w-12 h-12 mb-2" />
-            <p>Gingerbread Village</p>
-          </div>
-          <div className="flex flex-col items-center">
-            <Moon className="w-12 h-12 mb-2" />
-            <p>Aurora Borealis Sky</p>
-          </div>
         </div>
-      </motion.div>
+      </div>
     </div>
   )
 }

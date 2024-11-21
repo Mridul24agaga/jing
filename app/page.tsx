@@ -70,7 +70,6 @@ export default function LandingPage() {
   const [username, setUsername] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isSoundOn, setIsSoundOn] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [showSignUp, setShowSignUp] = useState(false)
   const [showFindJingleBox, setShowFindJingleBox] = useState(false)
   const [email, setEmail] = useState('')
@@ -87,7 +86,6 @@ export default function LandingPage() {
       stopJingleBells()
     }
 
-    // Clean up function to stop the music when component unmounts
     return () => {
       stopJingleBells()
     }
@@ -96,7 +94,6 @@ export default function LandingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
     playClick()
     confetti({
       particleCount: 100,
@@ -104,57 +101,32 @@ export default function LandingPage() {
       origin: { y: 0.6 }
     })
 
-    try {
-      if (!username.trim()) {
-        throw new Error("Username cannot be empty")
-      }
-
-      const { data: existingUser, error: checkError } = await supabase
-        .from('christmas_pages')
-        .select('username')
-        .eq('username', username.trim())
-        .single()
-
-      if (checkError) {
-        if (checkError.code === 'PGRST116') {
-          setShowSignUp(true)
-        } else {
-          throw new Error(`An error occurred while checking the username: ${checkError.message}`)
-        }
-      } else if (existingUser) {
-        throw new Error("This username is already taken. Please choose another one.")
-      }
-    } catch (error) {
-      if (error instanceof Error) {
-        console.error('Error:', error.message)
-        setError(error.message)
-      } else {
-        console.error('An unexpected error occurred:', error)
-        setError("An unexpected error occurred. Please try again.")
-      }
-    } finally {
+    if (!username.trim()) {
+      setShowSignUp(true)
       setIsLoading(false)
+      return
     }
+
+    const { data: existingUser } = await supabase
+      .from('christmas_pages')
+      .select('username')
+      .eq('username', username.trim())
+      .single()
+
+    if (existingUser) {
+      setShowSignUp(true)
+    } else {
+      setShowSignUp(true)
+    }
+
+    setIsLoading(false)
   }
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    setError(null)
 
     try {
-      // Check if the user already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('user_profiles')
-        .select('user_id')
-        .eq('username', username.trim())
-        .single()
-
-      if (existingUser) {
-        throw new Error("This username is already taken. Please choose another one.")
-      }
-
-      // If the user doesn't exist, proceed with sign up
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -165,50 +137,21 @@ export default function LandingPage() {
         }
       })
 
-      if (error) {
-        if (error.message.includes("User already registered")) {
-          throw new Error("This email is already registered. Please use a different email or try logging in.")
-        }
-        throw error
-      }
+      if (error) throw error
 
       if (data.user) {
-        // Insert into christmas_pages
-        const { error: pageError } = await supabase
+        await supabase
           .from('christmas_pages')
           .insert([{ username: username.trim(), user_id: data.user.id }])
 
-        if (pageError) {
-          if (pageError.code === '23505') { // Unique constraint violation
-            throw new Error("This username is already taken. Please choose another one.")
-          }
-          throw pageError
-        }
-
-        // Insert into user_profiles
-        const { error: profileError } = await supabase
+        await supabase
           .from('user_profiles')
           .insert([{ user_id: data.user.id, username: username.trim() }])
 
-        if (profileError) {
-          if (profileError.code === '23505') { // Unique constraint violation
-            throw new Error("This username is already taken. Please choose another one.")
-          }
-          throw profileError
-        }
-
         router.push(`/customize/${username.trim()}`)
-      } else {
-        throw new Error("Failed to create user. Please try again.")
       }
     } catch (error) {
-      if (error instanceof Error) {
-        console.error('Error:', error.message)
-        setError(error.message)
-      } else {
-        console.error('An unexpected error occurred during sign up:', error)
-        setError("An unexpected error occurred during sign up. Please try again.")
-      }
+      console.error('Error during sign up:', error)
     } finally {
       setIsLoading(false)
     }
@@ -263,11 +206,6 @@ export default function LandingPage() {
                     onChange={(e) => setUsername(e.target.value)}
                   />
                 </div>
-                {error && (
-                  <div className="text-red-500 text-sm mt-2">
-                    {error}
-                  </div>
-                )}
               </div>
               
               <motion.button
@@ -374,11 +312,6 @@ export default function LandingPage() {
                     onChange={(e) => setPassword(e.target.value)}
                   />
                 </div>
-                {error && (
-                  <div className="text-red-500 text-sm">
-                    {error}
-                  </div>
-                )}
                 <motion.button
                   type="submit"
                   className="w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-lg font-medium text-white bg-gradient-to-r from-red-600 to-green-600 hover:from-red-700 hover:to-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
@@ -396,3 +329,4 @@ export default function LandingPage() {
     </div>
   )
 }
+
