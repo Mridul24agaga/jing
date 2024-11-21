@@ -5,6 +5,8 @@ import { useRouter, useParams } from 'next/navigation'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Palette, Mountain, Sparkles } from 'lucide-react'
+import  AdComponent  from '@/app/components/adcomponent'
+
 
 const treeColors = [
   { name: 'Emerald', value: '#2ecc71' },
@@ -55,6 +57,7 @@ export default function CustomizePage() {
       >
         Customize Your JingleBox!
       </motion.h1>
+      <AdComponent/>
       
       <div className="max-w-6xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white/10 backdrop-blur-lg rounded-3xl shadow-2xl p-6 md:p-8">

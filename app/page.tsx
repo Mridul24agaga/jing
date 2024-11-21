@@ -10,7 +10,8 @@ import confetti from 'canvas-confetti'
 import { createClient } from '@supabase/supabase-js'
 import BackgroundDecorations from './BackgroundDecorations'
 import FindJingleBox from './FindJingleBox'
-
+import  AdComponent  from '@/app/components/adcomponent'
+ 
 // Initialize Supabase client
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -161,6 +162,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-to-b from-[#8B4513] via-green-800 to-blue-900 text-white p-4 md:p-8 relative overflow-hidden">
       <Snowfall snowflakeCount={200} />
       <BackgroundDecorations />
+      <AdComponent/>
       
       <motion.h1 
         className="text-4xl md:text-6xl font-bold text-center mb-8 mt-16"
