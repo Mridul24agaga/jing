@@ -6,7 +6,6 @@ import { useSearchParams, useParams } from 'next/navigation'
 import { Gift, MessageCircle, X, ChevronLeft, ChevronRight, Mail, AlertTriangle, Send, Loader2, Palette, Mountain, Sparkles } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GoogleGenerativeAI, type Part } from '@google/generative-ai'
-import  AdComponent  from '@/app/components/adcomponent'
 
 
 // Initialize the Google Generative AI client
@@ -72,7 +71,6 @@ const Dialog = ({ isOpen, onClose, children, title }: { isOpen: boolean; onClose
       <div className="bg-gradient-to-b from-red-100 to-green-100 rounded-3xl p-8 max-w-2xl w-full mx-4 h-[90vh] relative shadow-lg">
         <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16">
           <Image src="/christmas-items/santa-hat.png" alt="Christmas Hat" width={64} height={64} />
-          <AdComponent/>
 
         </div>
         
