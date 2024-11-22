@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import Script from 'next/script'
 import './globals.css'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -23,16 +22,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        <meta name="monetag" content="140337247a97003ca863d93da8f19220" />
-      </head>
-      <Script
-        src="https://alwingulla.com/88/tag.min.js"
-        data-zone="115418"
-        async
-        data-cfasync="false"
-        strategy="afterInteractive"
-      />
       <body className={inter.className}>{children}</body>
     </html>
   )

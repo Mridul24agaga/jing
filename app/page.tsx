@@ -11,7 +11,7 @@ import { createClient } from '@supabase/supabase-js'
 import BackgroundDecorations from './BackgroundDecorations'
 import FindJingleBox from './FindJingleBox'
 import  AdComponent  from '@/app/components/adcomponent'
- 
+import IntroductionModal from "./IntroductionModal" 
 // Initialize Supabase client
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -52,6 +52,7 @@ const ChristmasCountdown = () => {
           whileHover={{ scale: 1.1 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
+          
           <motion.div 
             className="text-2xl md:text-4xl font-bold"
             initial={{ scale: 1 }}
@@ -163,7 +164,7 @@ export default function LandingPage() {
       <Snowfall snowflakeCount={200} />
       <BackgroundDecorations />
       <AdComponent/>
-      
+      <IntroductionModal />
       <motion.h1 
         className="text-4xl md:text-6xl font-bold text-center mb-8 mt-16"
         initial={{ y: -50, opacity: 0 }}
