@@ -164,7 +164,6 @@ export default function LandingPage() {
       <Snowfall snowflakeCount={200} />
       <BackgroundDecorations />
       <AdComponent/>
-      <IntroductionModal />
       <motion.h1 
         className="text-4xl md:text-6xl font-bold text-center mb-8 mt-16"
         initial={{ y: -50, opacity: 0 }}
