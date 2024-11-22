@@ -1,28 +1,17 @@
-import { useEffect } from 'react';
+import Script from 'next/script'
 
-const AdComponent = () => {
-  useEffect(() => {
-    // Create the script element
-    const script = document.createElement('script');
+export default function AdComponent() {
+  return (
+    <>
+      <Script
+        src="https://alwingulla.com/88/tag.min.js"
+        data-zone="115418"
+        async
+        data-cfasync="false"
+        strategy="afterInteractive"
+      />
+      {/* You can add any other ad-related content here if needed */}
+    </>
+  )
+}
 
-    // Set the script attributes
-    script.src = "//scented-leather.com/bxX/VJsVd.G/lO0EYOW/cI/ieamm9NugZJU/lgkRP/TQUn3KNRj/g/5uN/zpMAtAN/Trc-2oO/DLkA3QNvAc";
-    script.async = true;
-    script.referrerPolicy = 'no-referrer-when-downgrade';
-
-    // Add settings if needed
-    script.settings = {};
-
-    // Append the script to the document
-    document.body.appendChild(script);
-
-    // Clean up the script when the component unmounts
-    return () => {
-      document.body.removeChild(script);
-    };
-  }, []);
-
-  return null; // The component doesn't need to render anything
-};
-
-export default AdComponent;
