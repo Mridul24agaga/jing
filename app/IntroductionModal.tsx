@@ -3,11 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 
 interface IntroductionModalProps {
-  isOpen: boolean
-  onClose: () => void
+  isOpen?: boolean
+  onClose?: () => void
 }
 
-const IntroductionModal: React.FC<IntroductionModalProps> = ({ isOpen, onClose }) => {
+const IntroductionModal: React.FC<IntroductionModalProps> = ({ 
+  isOpen = false, 
+  onClose = () => {} 
+}) => {
   return (
     <AnimatePresence>
       {isOpen && (
@@ -25,7 +28,7 @@ const IntroductionModal: React.FC<IntroductionModalProps> = ({ isOpen, onClose }
           >
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">Welcome to JingleBox.pro!</h2>
-              <button onClick={onClose} className="text-gray-400 hover:text-white">
+              <button onClick={() => onClose?.()} className="text-gray-400 hover:text-white">
                 <X size={24} />
               </button>
             </div>
@@ -40,7 +43,7 @@ const IntroductionModal: React.FC<IntroductionModalProps> = ({ isOpen, onClose }
               <p>Get ready to spread some holiday cheer!</p>
             </div>
             <button
-              onClick={onClose}
+              onClick={() => onClose?.()}
               className="mt-6 w-full py-2 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors"
             >
               Got it, let's go!
@@ -53,3 +56,4 @@ const IntroductionModal: React.FC<IntroductionModalProps> = ({ isOpen, onClose }
 }
 
 export default IntroductionModal
+

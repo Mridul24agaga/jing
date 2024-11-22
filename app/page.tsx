@@ -11,6 +11,7 @@ import { createClient } from '@supabase/supabase-js'
 import BackgroundDecorations from './BackgroundDecorations'
 import FindJingleBox from './FindJingleBox'
 import IntroductionModal from "./IntroductionModal" 
+
 // Initialize Supabase client
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
@@ -51,7 +52,6 @@ const ChristmasCountdown = () => {
           whileHover={{ scale: 1.1 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          
           <motion.div 
             className="text-2xl md:text-4xl font-bold"
             initial={{ scale: 1 }}
@@ -77,8 +77,18 @@ export default function LandingPage() {
   const [password, setPassword] = useState('')
   const router = useRouter()
 
+  const [showIntroModal, setShowIntroModal] = useState(false)
+
   const [playJingleBells, { stop: stopJingleBells }] = useSound('/sounds/jingle-bells.mp3', { loop: true })
   const [playClick] = useSound('/sounds/click.mp3')
+
+  useEffect(() => {
+    const hasSeenIntro = localStorage.getItem('hasSeenIntro')
+    if (!hasSeenIntro) {
+      setShowIntroModal(true)
+      localStorage.setItem('hasSeenIntro', 'true')
+    }
+  }, [])
 
   useEffect(() => {
     if (isSoundOn) {
@@ -91,6 +101,10 @@ export default function LandingPage() {
       stopJingleBells()
     }
   }, [isSoundOn, playJingleBells, stopJingleBells])
+
+  const handleCloseIntroModal = () => {
+    setShowIntroModal(false)
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -160,6 +174,11 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#8B4513] via-green-800 to-blue-900 text-white p-4 md:p-8 relative overflow-hidden">
+      <AnimatePresence>
+        {showIntroModal && (
+          <IntroductionModal onClose={handleCloseIntroModal} />
+        )}
+      </AnimatePresence>
       <Snowfall snowflakeCount={200} />
       <BackgroundDecorations />
       <motion.h1 
