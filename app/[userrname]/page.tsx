@@ -91,142 +91,6 @@ const Dialog = ({ isOpen, onClose, children, title }: { isOpen: boolean; onClose
   );
 };
 
-const EGiftCard = ({ theme, selected, onClick }: { theme: string; selected: boolean; onClick: () => void }) => {
-  const themes = {
-    'christmas-tree': {
-      title: 'Christmas Tree',
-      gradient: 'from-green-500 to-green-700',
-      icon: '🎄'
-    },
-    'santa': {
-      title: 'Santa',
-      gradient: 'from-red-500 to-red-700',
-      icon: '🎅'
-    },
-    'snowman': {
-      title: 'Snowman',
-      gradient: 'from-blue-400 to-blue-600',
-      icon: '⛄'
-    }
-  }
-
-  const currentTheme = themes[theme as keyof typeof themes]
-
-  return (
-    <div 
-      className={`cursor-pointer transition-all p-6 rounded-lg bg-gradient-to-br ${currentTheme.gradient} ${
-        selected ? 'ring-2 ring-white shadow-lg scale-105' : 'hover:shadow-md'
-      }`}
-      onClick={onClick}
-      role="button"
-      aria-pressed={selected}
-      aria-label={`Select ${currentTheme.title} theme`}
-    >
-      <div className="text-center text-white">
-        <div className="text-4xl mb-2">{currentTheme.icon}</div>
-        <div className="font-medium">{currentTheme.title}</div>
-        <div className="text-sm opacity-75">Digital Card</div>
-      </div>
-    </div>
-  )
-}
-
-const GiftingDialog = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  const [selectedTheme, setSelectedTheme] = useState<string>('christmas-tree')
-  const [recipientName, setRecipientName] = useState('')
-  const [recipientEmail, setRecipientEmail] = useState('')
-  const [message, setMessage] = useState('')
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    // Here you would typically handle the e-gift submission
-    console.log({
-      theme: selectedTheme,
-      recipientName,
-      recipientEmail,
-      message
-    })
-    onClose()
-  }
-
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-gradient-to-b from-red-100 to-green-100 rounded-3xl p-8 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto relative">
-        <div className="absolute -top-8 left-1/2 transform -translate-x-1/2 w-16 h-16">
-          <Image src="/christmas-items/santa-hat.png" alt="Christmas Hat" width={64} height={64} />
-        </div>
-        
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 hover:text-gray-700" aria-label="Close">
-          <X className="h-6 w-6" />
-        </button>
-
-        <h2 className="text-3xl font-bold text-center mb-8 text-green-800">Send a Christmas E-Card</h2>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-3 gap-4">
-            {['christmas-tree', 'santa', 'snowman'].map((theme) => (
-              <EGiftCard
-                key={theme}
-                theme={theme}
-                selected={selectedTheme === theme}
-                onClick={() => setSelectedTheme(theme)}
-              />
-            ))}
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="recipientName" className="block text-sm font-medium text-gray-700">Recipient's Name</label>
-              <input
-                id="recipientName"
-                type="text"
-                value={recipientName}
-                onChange={(e) => setRecipientName(e.target.value)}
-                placeholder="Enter recipient's name"
-                required
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="recipientEmail" className="block text-sm font-medium text-gray-700">Recipient's Email</label>
-              <input
-                id="recipientEmail"
-                type="email"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="Enter recipient's email"
-                required
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="message" className="block text-sm font-medium text-gray-700">Your Christmas Message</label>
-              <textarea
-                id="message"
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Write your festive message here..."
-                className="mt-1 block w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 h-32"
-              />
-            </div>
-          </div>
-
-          <button 
-            type="submit" 
-            className="w-full px-4 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white font-bold rounded-md hover:from-red-600 hover:to-red-800 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center justify-center gap-2"
-          >
-            <Gift className="w-5 h-5" />
-            Send Christmas E-Card
-          </button>
-        </form>
-      </div>
-    </div>
-  )
-}
 
 const MessageBubble = ({ sender, text }: { sender: string; text: string }) => (
   <div className="relative group">
@@ -675,12 +539,6 @@ export default function ChristmasPage() {
 
         <div className="flex items-center gap-4 mt-auto mb-8">
           <ActionButton
-            icon={Gift}
-            label="Send Gift"
-            onClick={() => setShowGiftingPopup(true)}
-            color="bg-gradient-to-br from-red-500 to-red-700"
-          />
-          <ActionButton
             icon={MessageCircle}
             label="Add Message"
             onClick={() => setShowMessagePopup(true)}
@@ -775,10 +633,6 @@ export default function ChristmasPage() {
         </div>
       </Dialog>
 
-      <GiftingDialog 
-        isOpen={showGiftingPopup}
-        onClose={() => setShowGiftingPopup(false)}
-      />
 
       <ChatWithSanta 
         isOpen={showChatWithSanta}

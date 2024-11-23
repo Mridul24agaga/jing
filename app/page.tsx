@@ -3,19 +3,43 @@
 import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Gift, Loader, Volume2, VolumeX, X } from 'lucide-react'
+import { Gift, Loader, Volume2, VolumeX, X, ChevronLeft, ChevronRight } from 'lucide-react'
 import Snowfall from 'react-snowfall'
 import useSound from 'use-sound'
 import confetti from 'canvas-confetti'
 import { createClient } from '@supabase/supabase-js'
+import Image from 'next/image'
 import BackgroundDecorations from './BackgroundDecorations'
 import FindJingleBox from './FindJingleBox'
-import IntroductionModal from "./IntroductionModal" 
+import show from "@/public/show.gif"
 
 // Initialize Supabase client
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
 
-const ChristmasCountdown = () => {
+const slides = [
+  {
+    title: "Welcome to JingleBox.pro!",
+    content: "JingleBox is your personal Christmas hub. Create, customize, and share your holiday spirit with friends and family. Whether you're new or returning, let's spread some cheer!",
+    image: "/intro.jpeg"
+  },
+  {
+    title: "Create Your JingleBox",
+    content: "New user? Choose a unique name for your JingleBox page. This will be your custom URL. Returning user? You can find your existing JingleBox or create a new one!",
+    image: "/video.gif"
+  },
+  {
+    title: "Customize Your Page",
+    content: "Make your JingleBox truly yours! Add personal Christmas messages, upload festive photos, choose from various themes, and even set a countdown to your special day.",
+    image: "/customise.gif"
+  },
+  {
+    title: "Share the Magic",
+    content: "Once your JingleBox is ready, share your unique link with loved ones. They can visit your page, leave messages, and feel the warmth of your virtual Christmas celebration!",
+    image: "/final.gif"
+  }
+]
+
+const ChristmasCountdown: React.FC = () => {
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -37,32 +61,33 @@ const ChristmasCountdown = () => {
         seconds: Math.floor((difference / 1000) % 60),
       })
     }
-
+  
     calculateTimeLeft()
     const timer = setInterval(calculateTimeLeft, 1000)
     return () => clearInterval(timer)
   }, [])
 
   return (
-    <div className="flex flex-wrap justify-center gap-4 mb-8">
-      {Object.entries(timeLeft).map(([unit, value]) => (
-        <motion.div 
-          key={unit} 
-          className="text-center bg-red-600 rounded-lg p-4 shadow-lg"
-          whileHover={{ scale: 1.1 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          <motion.div 
-            className="text-2xl md:text-4xl font-bold"
-            initial={{ scale: 1 }}
-            animate={{ scale: [1, 1.2, 1] }}
-            transition={{ duration: 1, repeat: Infinity, repeatType: "reverse" }}
-          >
-            {value}
-          </motion.div>
-          <div className="text-xs md:text-sm uppercase">{unit}</div>
-        </motion.div>
-      ))}
+    <div className="text-center mb-8">
+      <h2 className="text-2xl font-bold mb-2">Christmas Countdown</h2>
+      <div className="flex justify-center space-x-4">
+        <div>
+          <span className="text-4xl font-bold">{timeLeft.days}</span>
+          <p>Days</p>
+        </div>
+        <div>
+          <span className="text-4xl font-bold">{timeLeft.hours}</span>
+          <p>Hours</p>
+        </div>
+        <div>
+          <span className="text-4xl font-bold">{timeLeft.minutes}</span>
+          <p>Minutes</p>
+        </div>
+        <div>
+          <span className="text-4xl font-bold">{timeLeft.seconds}</span>
+          <p>Seconds</p>
+        </div>
+      </div>
     </div>
   )
 }
@@ -77,16 +102,16 @@ export default function LandingPage() {
   const [password, setPassword] = useState('')
   const router = useRouter()
 
-  const [showIntroModal, setShowIntroModal] = useState(false)
+  const [showSlideshow, setShowSlideshow] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(0)
 
   const [playJingleBells, { stop: stopJingleBells }] = useSound('/sounds/jingle-bells.mp3', { loop: true })
   const [playClick] = useSound('/sounds/click.mp3')
 
   useEffect(() => {
-    const hasSeenIntro = localStorage.getItem('hasSeenIntro')
-    if (!hasSeenIntro) {
-      setShowIntroModal(true)
-      localStorage.setItem('hasSeenIntro', 'true')
+    const hasSeenSlideshow = localStorage.getItem('hasSeenSlideshow')
+    if (!hasSeenSlideshow) {
+      setShowSlideshow(true)
     }
   }, [])
 
@@ -102,8 +127,17 @@ export default function LandingPage() {
     }
   }, [isSoundOn, playJingleBells, stopJingleBells])
 
-  const handleCloseIntroModal = () => {
-    setShowIntroModal(false)
+  const handleCloseSlideshow = () => {
+    setShowSlideshow(false)
+    localStorage.setItem('hasSeenSlideshow', 'true')
+  }
+
+  const nextSlide = () => {
+    setCurrentSlide((prev) => (prev + 1) % slides.length)
+  }
+
+  const prevSlide = () => {
+    setCurrentSlide((prev) => (prev - 1 + slides.length) % slides.length)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,8 +209,68 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#8B4513] via-green-800 to-blue-900 text-white p-4 md:p-8 relative overflow-hidden">
       <AnimatePresence>
-        {showIntroModal && (
-          <IntroductionModal onClose={handleCloseIntroModal} />
+        {showSlideshow && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
+          >
+            <div className="bg-white p-4 sm:p-8 rounded-lg shadow-xl w-full max-w-2xl relative">
+              <button 
+                onClick={handleCloseSlideshow}
+                className="absolute top-2 right-2 text-gray-600 hover:text-black"
+              >
+                <X size={24} />
+              </button>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentSlide}
+                  initial={{ opacity: 0, x: 50 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -50 }}
+                  transition={{ duration: 0.3 }}
+                  className="text-center"
+                >
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-4 text-black">{slides[currentSlide].title}</h2>
+                  <div className="relative w-full aspect-video mb-6">
+                    <Image
+                      src={slides[currentSlide].image}
+                      alt={slides[currentSlide].title}
+                      layout="fill"
+                      objectFit="contain"
+                      className="rounded-lg"
+                    />
+                  </div>
+                  <p className="text-gray-700 text-base sm:text-lg mb-6">{slides[currentSlide].content}</p>
+                </motion.div>
+              </AnimatePresence>
+              <div className="flex justify-between mt-4 sm:mt-8">
+                <button
+                  onClick={prevSlide}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full"
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <button
+                  onClick={nextSlide}
+                  className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-full"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </div>
+              <div className="mt-4 flex justify-center space-x-2">
+                {slides.map((_, index) => (
+                  <div
+                    key={index}
+                    className={`h-2 w-2 rounded-full ${
+                      index === currentSlide ? 'bg-gray-800' : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
+          </motion.div>
         )}
       </AnimatePresence>
       <Snowfall snowflakeCount={200} />
@@ -264,7 +358,7 @@ export default function LandingPage() {
         transition={{ delay: 0.5 }}
       >
         <p className="text-gray-300">
-          {showFindJingleBox ? "Don't have a page yet?" : "Already have a page?"}
+{showFindJingleBox ? "Don't have a page yet?" : "Already have a page?"}
         </p>
         <button
           onClick={() => setShowFindJingleBox(!showFindJingleBox)}
